@@ -1,26 +1,9 @@
 #pragma once
 #include <vector>
+#include "Gcell.h"
+#include "Guide2D.h"
 using namespace std;
 namespace XZA{
-    enum Direction{
-        HORIZONTAL = 0,
-        VERTICAL
-    };
-    struct Location{//Gcell的位置，用整数表示
-        //layer
-        int l;
-        //position
-        int x;
-        int y;
-        
-        Location()
-            : l(0), x(0), y(0)
-        {}
-        Location(int l, int x, int y)
-            : l(l), x(x), y(y)
-        {}
-    };
-    using Pin = vector<Location>;
     struct LayerInfo{   //每一层的布线资源信息
         string name;
         Direction direction;
@@ -31,7 +14,9 @@ namespace XZA{
     struct NetInfo{
         string name;
         vector<Pin> pins;
+        Guide2D guide2D;
     };
+
     class Database{
     private:
         // Routing Resource
@@ -51,10 +36,19 @@ namespace XZA{
         // Load file
         void load_Routing_Resource_file(const string& filename);
         void load_Net_Information_file(const string& filename);
+        void load_Guide2D_file(const string& filenam);
     public:
-        Database();
-        Database(const string& capfile, const string& netfile);
-        void load_data(const string& capfile = "Data/nvdla.cap", const string& netfile = "Data/nvdla.net");
+        Database(
+            const string& capfile = "Data/nvdla.cap",
+            const string& netfile = "Data/nvdla.net",
+            const string& guide2Dfile = "Data/guide2D.txt"
+        );
+        void load_data(
+            const string& capfile = "Data/nvdla.cap",
+            const string& netfile = "Data/nvdla.net",
+            const string& guide2Dfile = "Data/guide2D.txt"
+        );
     };
+    
     extern Database db;
 }
