@@ -15,6 +15,8 @@ namespace XZA{
         string name;
         vector<Pin> pins;
         Guide2D guide2D;
+
+        NetInfo(const string& name = ""): name(name){}
     };
 
     class Database{

@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 using namespace std;
 
 XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net", "Data/guide2D.txt");
@@ -53,47 +54,28 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
 
 void XZA::Database::load_Net_Information_file(const string& filename){
     ifstream file(filename);
+    string redundant_chars = "(),[]";
     if(!file.is_open()){
         cerr << "Error: Cannot open file " << filename << endl;
         exit(1);
     }
+    string line;
     nets.reserve(1000);
-    while(true){    //循环读取nets
-        char c;
+    while(true){
         string name;
-        file >> name;
-        if(name == "EOF") break;
-        cin >> c;
-        if(c != '('){
-            cerr << "Error: Invalid file format, '(' was lost." << endl;
-            exit(1);
-        }
-        NetInfo net;
-        net.name = name;
-        cin >> c;
-        while(c == '['){    //循环读取每个net中的pins
-            //在net.pins中添加一个pin
-            Pin &pin = net.pins.emplace_back();
-            do{//每个pin有好几个可选点,可选点之间用‘,’分隔
-                //在pin中添加loc
-                Location &loc = pin.emplace_back();
-                scanf("(%d,%d,%d)", &loc.l, &loc.x, &loc.y);
-                cin >> c;
-            }
-            while( c == ',');
-            //读取']'后, pin读取完毕
-            if(c != ']'){
-                cerr << "Error: Invalid file format, ']' was lost." << endl;
-                exit(1);
-            }
-            //读取下一个pin, 以'['开头
-            cin >> c;
-        }
-        nets.push_back(net);
-        //读取')'后, net读取完毕
-        if( c != ')'){
-            cerr << "Error: Invalid file format, ')' was lost." << endl;
-            exit(1);
+        if(!getline(file, name))  //第一行输入的是net的名字
+            break;
+        nets.emplace_back(name);
+        getline(file, line);       //读取掉'('
+        while(getline(file, line) && line != ")"){
+            line.erase(remove_if(line.begin(), line.end(), [&redundant_chars](char c) {
+                return redundant_chars.find(c) != string::npos;
+                }), line.end());
+            istringstream ss(line);
+            Pin& pin = nets.back().pins.emplace_back();
+            Location loc;
+            while(ss >> loc.l >> loc.x >> loc.y)
+                pin.emplace_back(loc);
         }
     }
     file.close();
@@ -101,9 +83,29 @@ void XZA::Database::load_Net_Information_file(const string& filename){
 
 void XZA::Database::load_Guide2D_file(const string& filename){
     ifstream file(filename);
+    const string redundant_chars = ":->(),[]";
     if(!file.is_open()){
         cerr << "Error: Cannot open file " << filename << endl;
         exit(1);
     }
-    
+    string line;
+    Path path;
+    Segment seg;
+    for(auto &net : nets){
+        getline(file, line); //读取掉net的名字
+        getline(file, line); //读取掉'('
+        while(getline(file, line) && line != ")"){ //处理path
+            line.erase(remove_if(line.begin(), line.end(), [&redundant_chars](char c) {
+                return redundant_chars.find(c) != string::npos;
+                }), line.end());
+            istringstream ss(line);
+            ss >> path.start.x >> path.start.y >> path.end.x >> path.end.y;
+            if (path.start == path.end)
+                continue;
+            net.guide2D.emplace_back(path);
+            while(ss >> seg.start.x >> seg.start.y >> seg.end.x >> seg.end.y)
+                net.guide2D.back().segments.emplace_back(seg);
+        }
+        getline(file, line); //读取掉')'
+    }
 }
