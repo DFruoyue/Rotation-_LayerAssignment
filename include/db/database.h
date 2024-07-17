@@ -11,6 +11,7 @@ namespace XZA{
         string name;
         Direction direction;
         vector<vector<int>> capacity;
+        int minlength;
     };
     class Database{
     private:
@@ -29,11 +30,14 @@ namespace XZA{
 
         // Load file
         void load_Routing_Resource_file(const string& filename);
-        void load_Net_Information_file(const string& filename);
+//        void load_Net_Information_file(const string& filename);
 
     public:
         Database();
-        ~Database();
+//        ~Database();
         void load_data();
+        void log_load();
     };
+
+    extern Database database;
 }
