@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type":"lldb",
+            "request":"launch",
+            "name":"DebugInTest",
+            "program":"${workspaceFolder}/build/Test",
+            "args":[],
+            "cwd":"${workspaceFolder}",
+            "terminal": "integrated"
+        },
+        {
+            "type":"lldb",
+            "request":"launch",
+            "name":"DebugInObject",
+            "program":"${workspaceFolder}/build/LayerAssignment",
+            "args":[],
+            "cwd":"${workspaceFolder}",
+            "terminal": "integrated"
+        }
+    ]
+}

@@ -2,8 +2,11 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 using namespace XZA;
 int main(){
-    database.log_load();
+    XZA::database.log_load();
+    cin.get();
+    return 0;
 }
