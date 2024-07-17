@@ -4,7 +4,7 @@
 #include <iostream>
 using namespace std;
 
-XZA::Database XZA::db;
+XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net", "Data/guide2D.txt");
 
 XZA::Database::Database(const string& capfile, const string& netfile, const string& guide2Dfile){
     load_data(capfile, netfile, guide2Dfile);
@@ -100,5 +100,10 @@ void XZA::Database::load_Net_Information_file(const string& filename){
 }
 
 void XZA::Database::load_Guide2D_file(const string& filename){
+    ifstream file(filename);
+    if(!file.is_open()){
+        cerr << "Error: Cannot open file " << filename << endl;
+        exit(1);
+    }
     
 }

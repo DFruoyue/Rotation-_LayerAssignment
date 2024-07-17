@@ -14,9 +14,6 @@ list(REMOVE_ITEM ObjectSources "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 file(GLOB_RECURSE TestSources "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 list(REMOVE_ITEM TestSources "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
-message("ObjectSources: ${ObjectSources}")
-message("TestSources: ${TestSources}")
-
 # 添加头文件搜索路径
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
