@@ -2,6 +2,8 @@
 #include <vector>
 #include "Gcell.h"
 #include "Guide2D.h"
+#include <iostream>
+#include <fstream>
 using namespace std;
 namespace XZA{
     struct LayerInfo{   //每一层的布线资源信息
@@ -17,11 +19,57 @@ namespace XZA{
         Guide2D guide2D;
 
         NetInfo(const string& name = ""): name(name){}
+        void output() const{
+            cout << "Net: " << name << " pins: " << endl;
+            int i = 1;
+            for(const auto& pin : pins){
+                cout << i << '.';
+                for(const auto& loc : pin){
+                    cout << "(" << loc.l << ", " << loc.x << ", " << loc.y << ") ";
+                }
+                cout << endl;
+                i++;
+            }
+            cout << "Guide2D: " << endl;
+            for(const auto& path : guide2D){
+                cout << "Path: (" << path.start.x << ", " << path.start.y << ") -> (" << path.end.x << ", " << path.end.y << ")";
+                cout << "\t Segements: ";
+                for(const auto& seg : path.segments){
+                    printf("[%d %d %d %d]", seg.start.x, seg.start.y, seg.end.x, seg.end.y);
+                }
+                cout << endl;
+            }
+        }
+        void outputfile(const string& filename) const{
+            fstream file;
+            file.open(filename, ios::app);
+                file << "Net: " << name << " pins: " << endl;
+            int i = 1;
+            for(const auto& pin : pins){
+                file << i << '.';
+                for(const auto& loc : pin){
+                    file << "(" << loc.l << ", " << loc.x << ", " << loc.y << ") ";
+                }
+                file << endl;
+                i++;
+            }
+            file << "Guide2D: " << endl;
+            for(const auto& path : guide2D){
+                file << "Path: (" << path.start.x << ", " << path.start.y << ") -> (" << path.end.x << ", " << path.end.y << ")";
+                file << "\t Segements: ";
+                for(const auto& seg : path.segments){
+                    file << "[" << seg.start.x << " " << seg.start.y << " " << seg.end.x << " " << seg.end.y << "]";
+                }
+                file << endl;
+            }
+            file.close();
+        }
     };
 
     class Database{
     private:
         // Routing Resource
+        int netNum;
         int layerNum;
         int xSize;
         int ySize;
@@ -46,10 +94,13 @@ namespace XZA{
             const string& guide2Dfile = "Data/guide2D.txt"
         );
         void load_data(
-            const string& capfile = "Data/nvdla.cap",
-            const string& netfile = "Data/nvdla.net",
-            const string& guide2Dfile = "Data/guide2D.txt"
+            const string& capfile,
+            const string& netfile,
+            const string& guide2Dfile
         );
+        void outputdebug() const;
+        friend void check_path_node_is_pin(const Database& db);
+        friend void check_guide2D(const Database& db);
     };
     
     extern Database db;

@@ -7,9 +7,9 @@ using namespace std;
 
 XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net", "Data/guide2D.txt");
 
-XZA::Database::Database(const string& capfile, const string& netfile, const string& guide2Dfile){
-    load_data(capfile, netfile, guide2Dfile);
-}
+XZA::Database::Database(const string& capfile, const string& netfile, const string& guide2Dfile)
+:netNum(0),layerNum(0)
+{load_data(capfile, netfile, guide2Dfile);}
 
 void XZA::Database::load_data(const string& capfile, const string& netfile, const string& guide2Dfile){
     load_Routing_Resource_file(capfile);
@@ -66,6 +66,7 @@ void XZA::Database::load_Net_Information_file(const string& filename){
         if(!getline(file, name))  //第一行输入的是net的名字
             break;
         nets.emplace_back(name);
+        netNum ++;
         getline(file, line);       //读取掉'('
         while(getline(file, line) && line != ")"){
             line.erase(remove_if(line.begin(), line.end(), [&redundant_chars](char c) {
@@ -89,8 +90,6 @@ void XZA::Database::load_Guide2D_file(const string& filename){
         exit(1);
     }
     string line;
-    Path path;
-    Segment seg;
     for(auto &net : nets){
         getline(file, line); //读取掉net的名字
         getline(file, line); //读取掉'('
@@ -99,13 +98,18 @@ void XZA::Database::load_Guide2D_file(const string& filename){
                 return redundant_chars.find(c) != string::npos;
                 }), line.end());
             istringstream ss(line);
+            Path& path = net.guide2D.emplace_back();
             ss >> path.start.x >> path.start.y >> path.end.x >> path.end.y;
-            if (path.start == path.end)
-                continue;
-            net.guide2D.emplace_back(path);
+            Segment seg;
             while(ss >> seg.start.x >> seg.start.y >> seg.end.x >> seg.end.y)
                 net.guide2D.back().segments.emplace_back(seg);
         }
-        getline(file, line); //读取掉')'
+    }
+}
+
+void XZA::Database::outputdebug() const{
+    for(auto& net: nets){
+        net.output();
+        cin.get();
     }
 }
