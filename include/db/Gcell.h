@@ -19,5 +19,5 @@ namespace XZA{
             : l(l), x(x), y(y)
         {}
     };
-    using Pin = std::vector<Location>;
+    using PinOptionalLocations = std::vector<Location>;
 }

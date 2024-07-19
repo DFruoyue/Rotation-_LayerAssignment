@@ -58,7 +58,8 @@
         "forward_list": "cpp",
         "map": "cpp",
         "span": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "source_location": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

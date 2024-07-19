@@ -15,18 +15,16 @@ namespace XZA{
     };
     struct NetInfo{
         string name;
-        vector<Pin> pins;
+        int pinNum;
+        vector<Location> pins;
         Guide2D guide2D;
 
-        NetInfo(const string& name = ""): name(name){}
+        NetInfo(const string& name = ""): name(name), pinNum(0){}
         void output() const{
             cout << "Net: " << name << " pins: " << endl;
             int i = 1;
             for(const auto& pin : pins){
-                cout << i << '.';
-                for(const auto& loc : pin){
-                    cout << "(" << loc.l << ", " << loc.x << ", " << loc.y << ") ";
-                }
+                cout << i << '.' << "(" << pin.l << ", " << pin.x << ", " << pin.y << ") ";
                 cout << endl;
                 i++;
             }
@@ -46,10 +44,7 @@ namespace XZA{
                 file << "Net: " << name << " pins: " << endl;
             int i = 1;
             for(const auto& pin : pins){
-                file << i << '.';
-                for(const auto& loc : pin){
-                    file << "(" << loc.l << ", " << loc.x << ", " << loc.y << ") ";
-                }
+                file << i << '.' << "(" << pin.l << ", " << pin.x << ", " << pin.y << ") ";
                 file << endl;
                 i++;
             }
@@ -87,6 +82,7 @@ namespace XZA{
         void load_Routing_Resource_file(const string& filename);
         void load_Net_Information_file(const string& filename);
         void load_Guide2D_file(const string& filenam);
+        void load_Net_and_guide2D_file(const string& netfilename, const string& guide2Dfilename);
     public:
         Database(
             const string& capfile = "Data/nvdla.cap",
