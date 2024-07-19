@@ -12,8 +12,16 @@ namespace XZA{
         PathNode start, end;
     };
     struct Path{
+        bool startisPin = false;
+        bool endisPin = false;
+        int startPinIdx = -1;
+        int endPinIdx = -1;
         PathNode start, end;
         std::vector<Segment> segments;
+        Path(){}
+        bool isPin() const{
+            return startisPin || endisPin;
+        }
     };
     using Guide2D = std::vector<Path>;
 }

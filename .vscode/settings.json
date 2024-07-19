@@ -59,7 +59,9 @@
         "map": "cpp",
         "span": "cpp",
         "valarray": "cpp",
-        "source_location": "cpp"
+        "source_location": "cpp",
+        "concepts": "cpp",
+        "numeric": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

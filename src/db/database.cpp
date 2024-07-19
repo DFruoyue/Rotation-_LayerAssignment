@@ -116,10 +116,14 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
                 for(const Location& loc : it -> first){
                     if(loc.x == path.start.x && loc.y == path.start.y){
                         net.pins[it -> second] = loc;
+                        path.startisPin = true;                          //标记此path是pin
+                        path.startPinIdx = it -> second;
                         flag = true;
                         break;
                     }else if(loc.x == path.end.x && loc.y == path.end.y){
                         net.pins[it -> second] = loc;
+                        path.endisPin = true;                          //标记此path是pin
+                        path.endPinIdx = it -> second;
                         flag = true;
                         break;
                     }
