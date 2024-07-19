@@ -1,0 +1,20 @@
+#pragma once
+#include <chrono>
+#include <string>
+#include <iostream>
+#include <iomanip>
+namespace XZA{
+    class Timer{
+        private:
+            std::chrono::time_point<std::chrono::high_resolution_clock> start;
+            std::chrono::duration<double> duration;
+        public:
+            Timer(){
+                start = std::chrono::high_resolution_clock::now();
+            }
+            void output(const std::string& task, const int& precision = 4){
+                duration = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - start);
+                std::cout << task << "用时: " << std::fixed << std::setprecision(precision) << duration.count() << " 秒." << std::endl;
+            }
+    };
+}

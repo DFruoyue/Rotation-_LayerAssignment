@@ -3,13 +3,18 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include "timer.hpp"
 using namespace std;
 
 XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net", "Data/guide2D.txt");
 
 XZA::Database::Database(const string& capfile, const string& netfile, const string& guide2Dfile)
 :netNum(0),layerNum(0)
-{load_data(capfile, netfile, guide2Dfile);}
+{
+    Timer timer;
+    load_data(capfile, netfile, guide2Dfile);
+    timer.output("初始化数据库");
+}
 
 void XZA::Database::load_data(const string& capfile, const string& netfile, const string& guide2Dfile){
     load_Routing_Resource_file(capfile);
