@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Gcell.h"
 #include <vector>
 namespace XZA{
