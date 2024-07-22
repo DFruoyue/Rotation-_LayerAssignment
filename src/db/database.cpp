@@ -103,12 +103,12 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
         nets.back().pins.resize(pinIdx);
 
         //处理guide2D文件
-        nets.back().guide2DTree.load(guide2Dfile);
+        nets.back().guide2D.load(guide2Dfile);
 
         //整合两个文件,固定net中pin的位置
         for(auto& OptionalLocations_of_pin : OptionalLocations_of_pins){
             for(auto& loc : OptionalLocations_of_pin.first){
-                if(net.guide2DTree.targetPin(OptionalLocations_of_pin.second, loc)){
+                if(net.guide2D.targetPin(OptionalLocations_of_pin.second, loc)){
                     net.pins[OptionalLocations_of_pin.second] = loc;
                     break;
                 }

@@ -23,7 +23,7 @@ namespace XZA{
         string name;
         int pinNum;
         vector<Location> pins;
-        Guide2DTree guide2DTree;
+        Guide2DTree guide2D;
         Solution solution;
 
         NetInfo(const string& name = ""): name(name), pinNum(0){}
@@ -35,8 +35,8 @@ namespace XZA{
                 cout << endl;
                 i++;
             }
-            cout << "Guide2DTree: " << endl;
-            guide2DTree.output();
+            cout << "Guide2D: " << endl;
+            guide2D.output();
         }
     };
 }

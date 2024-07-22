@@ -94,6 +94,22 @@ void XZA::Guide2DTree::freeTree(XZA::TreeNode* node){
         node = nullptr;
     }
 }
+void XZA::Guide2DTree::freeTree_withlog(XZA::TreeNode* node, int depth){
+    if(node != nullptr)
+    {
+        std::cout << std::string(depth * 5, ' ') << '(' + std::to_string(node -> loc.x) + ',' + std::to_string(node -> loc.y) + ')' << std::endl;
+        if(!node -> childs.empty()){
+            for(auto& child : node -> childs){
+                if(child != nullptr){
+                    freeTree_withlog(child, depth+1);
+                }
+            }
+            node -> childs.clear();
+        }
+        delete node;
+        node = nullptr;
+    }
+}
 void XZA::Guide2DTree::output() const{
     _output(root, 0);
 }

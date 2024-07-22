@@ -2,6 +2,7 @@
 #include <fstream>
 #include "Gcell.h"
 #include <vector>
+#include <iostream>
 namespace XZA{
     struct TreeNode{
 
@@ -22,11 +23,15 @@ namespace XZA{
             TreeNode* root = nullptr;
             void _output(TreeNode* node, int depth) const;
             void freeTree(TreeNode* node);
+            void freeTree_withlog(TreeNode* node, int depth);
 
         public:
             Guide2DTree()
                 :root(nullptr){}
-            ~Guide2DTree(){freeTree(root);}
+            ~Guide2DTree(){
+                std::cout << "FreeTree Log:\n";
+                freeTree_withlog(root, 0);
+            }
             
             void load(std::ifstream& file);
             void output() const;
