@@ -9,7 +9,7 @@ namespace XZA{
         std::vector<int> pinIdx;
 
         Location loc;
-        std::vector<TreeNode*> child = std::vector<TreeNode*>(0);
+        std::vector<TreeNode*> childs;
         TreeNode* parent = nullptr;
 
         TreeNode(): loc(0, 0, 0){};
@@ -17,13 +17,17 @@ namespace XZA{
         TreeNode(const Location& loc): loc(loc){};
     };
     class Guide2DTree{
+        
         private:
-            void _output(TreeNode* node, int depth) const;
-            void _delete(TreeNode* node);
-        public:
             TreeNode* root = nullptr;
-            Guide2DTree():root(nullptr){}
-            ~Guide2DTree();
+            void _output(TreeNode* node, int depth) const;
+            void freeTree(TreeNode* node);
+
+        public:
+            Guide2DTree()
+                :root(nullptr){}
+//            ~Guide2DTree(){freeTree(root);}
+            
             void load(std::ifstream& file);
             void output() const;
             bool targetPin(const int& pinIdx, const Location& loc);

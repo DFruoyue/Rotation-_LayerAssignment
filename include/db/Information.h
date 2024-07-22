@@ -23,7 +23,6 @@ namespace XZA{
         string name;
         int pinNum;
         vector<Location> pins;
-        Guide2D guide2D;
         Guide2DTree guide2DTree;
         Solution solution;
 
@@ -38,27 +37,6 @@ namespace XZA{
             }
             cout << "Guide2DTree: " << endl;
             guide2DTree.output();
-        }
-        void outputfile(const string& filename) const{
-            fstream file;
-            file.open(filename, ios::app);
-                file << "Net: " << name << " pins: " << endl;
-            int i = 1;
-            for(const auto& pin : pins){
-                file << i << '.' << "(" << pin.l << ", " << pin.x << ", " << pin.y << ") ";
-                file << endl;
-                i++;
-            }
-            file << "Guide2D: " << endl;
-            for(const auto& path : guide2D){
-                file << "Path: (" << path.start.x << ", " << path.start.y << ") -> (" << path.end.x << ", " << path.end.y << ")";
-                file << "\t Segements: ";
-                for(const auto& seg : path.segments){
-                    file << "[" << seg.start.x << " " << seg.start.y << " " << seg.end.x << " " << seg.end.y << "]";
-                }
-                file << endl;
-            }
-            file.close();
         }
     };
 }

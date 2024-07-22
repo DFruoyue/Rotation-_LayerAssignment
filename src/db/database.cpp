@@ -72,6 +72,7 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
 
     string netline, guide2Dline;
     nets.reserve(1000);
+    int count = 0;
     while(true){
         string name;
         if(!getline(netfile, name))  //第一行输入的是net的名字
@@ -79,6 +80,7 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
 
         auto &net = nets.emplace_back(name);
         netNum ++;
+        cout << count++ << endl;
 
         vector<std::pair<PinOptionalLocations, int>> OptionalLocations_of_pins;      //存储每一个pin可选的位置和其序号
         

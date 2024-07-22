@@ -13,6 +13,7 @@ void XZA::Guide2DTree::load(std::ifstream& file){
     std::vector<std::istringstream> lines;
     //读取掉net的名字和读取掉'('
     getline(file, line);
+    std::cout << line << std::endl;
     getline(file, line);
 
     while(getline(file, line) && line != ")"){ //处理path
@@ -21,9 +22,10 @@ void XZA::Guide2DTree::load(std::ifstream& file){
     lines.emplace_back(std::istringstream(line));
     }//得到所有的path
 
-    auto &ss = lines.back();lines.pop_back();
+    auto &ss = lines.back();
     ss >> root-> loc.x >> root-> loc.y;
 
+    lines.pop_back();
     //用一个queue来还原Tree
     std::queue<TreeNode*> q;
     q.push(root);
@@ -34,24 +36,24 @@ void XZA::Guide2DTree::load(std::ifstream& file){
         TreeNode * start = new TreeNode;
         TreeNode * end = new TreeNode;
         ss >> end->loc.x >> end->loc.y >> start->loc.x >> start->loc.y;
-        start -> child.push_back(end);
+        start -> childs.push_back(end);
         end -> parent = start;
         int tempx, tempy;
         ss >> tempx >> tempy;
         TreeNode *mid = end;
         while(ss >> tempx >> tempy >> tempx >> tempy){
             mid -> parent = new TreeNode(tempx, tempy);
-            mid -> parent -> child.push_back(mid);
+            mid -> parent -> childs.push_back(mid);
             mid = mid -> parent;
         }
         mid -> parent = start;
-        start -> child[0] = mid;
+        start -> childs[0] = mid;
 
         //将path加入到Tree中
-        while(start -> loc != q.front() -> loc)
+        while(start -> loc.x != q.front() -> loc.x || start -> loc.y != q.front() -> loc.y)
             q.pop();
-        q.front() -> child.push_back(start->child[0]);
-        start -> child[0] -> parent = q.front();
+        q.front() -> childs.push_back(start->childs[0]);
+        start -> childs[0] -> parent = q.front();
         q.push(end);
     }
 
@@ -72,19 +74,17 @@ bool XZA::Guide2DTree::targetPin(const int& pinIdx, const XZA::Location& loc){
             node->pinIdx.push_back(pinIdx);
         }
             
-        for(auto& child : node -> child)
+        for(auto& child : node -> childs)
             s.push(child);
     }
     return flag;
 }
-XZA::Guide2DTree::~Guide2DTree(){
-    _delete(root);
-}
-void XZA::Guide2DTree::_delete(XZA::TreeNode* node){
+void XZA::Guide2DTree::freeTree(XZA::TreeNode* node){
     if(node == nullptr)
         return;
-    for(auto& child : node -> child)
-        _delete(child);
+    for(auto& child : node -> childs){
+        freeTree(child);
+    }
     delete node;
 }
 void XZA::Guide2DTree::output() const{
@@ -100,6 +100,6 @@ void XZA::Guide2DTree::_output(XZA::TreeNode* node, int depth) const{
     if(node -> isPin)
         std::cout << BLUE;
     std::cout << std::left << std::setw(10) << '(' + std::to_string(node -> loc.x) + ',' + std::to_string(node -> loc.y) + ')' << RESET << std::endl;
-    for(auto& child : node -> child)
+    for(auto& child : node -> childs)
         _output(child, depth+1);
 }
