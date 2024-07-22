@@ -15,7 +15,7 @@ namespace XZA{
         int y;
 
         Location()
-            : l(0), x(0), y(0)
+            : l(-1), x(0), y(0)
         {}
         Location(int l, int x, int y)
             : l(l), x(x), y(y)

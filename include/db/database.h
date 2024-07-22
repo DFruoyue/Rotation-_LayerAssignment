@@ -42,6 +42,7 @@ namespace XZA{
             const string& guide2Dfile
         );
         void outputdebug() const;
+        
         friend void check_path_node_is_pin(const Database& db);
         friend void check_guide2D(const Database& db);
 

@@ -82,7 +82,6 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
         auto &net = nets.emplace_back(name);
         netNum ++;
 
-        cout << count++ << endl << name << endl;
         vector<std::pair<PinOptionalLocations, int>> OptionalLocations_of_pins;      //存储每一个pin可选的位置和其序号
         
         //处理net文件

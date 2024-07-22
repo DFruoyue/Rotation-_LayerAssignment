@@ -122,7 +122,7 @@ void XZA::Guide2DTree::_output(XZA::TreeNode* node, int depth) const{
     std::cout << std::string(depth * internal, ' ');
     if(node -> isPin)
         std::cout << BLUE;
-    std::cout << std::left << std::setw(10) << '(' + std::to_string(node -> loc.x) + ',' + std::to_string(node -> loc.y) + ')' << RESET << std::endl;
+    std::cout << std::left << std::setw(12) << '[' + std::to_string(node -> loc.l) + ' ' + std::to_string(node -> loc.x) + ' ' + std::to_string(node -> loc.y) + ']' << RESET << std::endl;
     for(auto& child : node -> childs)
         _output(child, depth+1);
 }
