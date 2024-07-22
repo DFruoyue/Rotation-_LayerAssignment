@@ -6,7 +6,7 @@
             "request":"launch",
             "name":"DebugInTest",
             "program":"${workspaceFolder}/build/Test",
-            "args":[],
+            "args":["--stack-size=1000000"],
             "cwd":"${workspaceFolder}",
             "terminal": "integrated"
         },
@@ -15,7 +15,7 @@
             "request":"launch",
             "name":"DebugInObject",
             "program":"${workspaceFolder}/build/LayerAssignment",
-            "args":[],
+            "args":["--stack-size=1000000"],
             "cwd":"${workspaceFolder}",
             "terminal": "integrated"
         }
