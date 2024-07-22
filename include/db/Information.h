@@ -2,6 +2,7 @@
 #include "Gcell.h"
 #include "Guide2D.h"
 #include "Solution.h"
+#include "Guide2DTree.h"
 #include <string>
 #include <vector>
 #include <fstream>
@@ -17,10 +18,13 @@ namespace XZA{
     };
 
     struct NetInfo{
+        const char* BLUE = "\033[34m";
+        const char* RESET = "\033[0m";
         string name;
         int pinNum;
         vector<Location> pins;
         Guide2D guide2D;
+        Guide2DTree guide2DTree;
         Solution solution;
 
         NetInfo(const string& name = ""): name(name), pinNum(0){}
@@ -32,15 +36,8 @@ namespace XZA{
                 cout << endl;
                 i++;
             }
-            cout << "Guide2D: " << endl;
-            for(const auto& path : guide2D){
-                cout << "Path: (" << path.start.x << ", " << path.start.y << ") -> (" << path.end.x << ", " << path.end.y << ")";
-                cout << "\t Segements: ";
-                for(const auto& seg : path.segments){
-                    printf("[%d %d %d %d]", seg.start.x, seg.start.y, seg.end.x, seg.end.y);
-                }
-                cout << endl;
-            }
+            cout << "Guide2DTree: " << endl;
+            guide2DTree.output();
         }
         void outputfile(const string& filename) const{
             fstream file;

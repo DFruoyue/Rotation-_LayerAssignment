@@ -20,6 +20,13 @@ namespace XZA{
         Location(int l, int x, int y)
             : l(l), x(x), y(y)
         {}
+
+        bool operator==(const Location& other) const{
+            return l == other.l && x == other.x && y == other.y;
+        }
+        bool operator!=(const Location& other) const{
+            return !(*this == other);
+        }
     };
     using PinOptionalLocations = std::vector<Location>;
 }

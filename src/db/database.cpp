@@ -6,6 +6,7 @@
 #include "timer.hpp"
 using namespace std;
 
+
 XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net", "Data/guide2D.txt");
 
 XZA::Database::Database(const string& capfile, const string& netfile, const string& guide2Dfile)
@@ -59,8 +60,7 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
 void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const string& guide2Dfilename){
     ifstream netfile(netfilename);
     ifstream guide2Dfile(guide2Dfilename);
-    string redundant_chars1 = "(),[]";
-    string redundant_chars2 = ":->(),[]";
+    const string redundant_chars1 = "(),[]";
     if(!netfile.is_open()){
         cerr << "Error: Cannot open file " << netfilename << endl;
         exit(1);
@@ -101,46 +101,17 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
         net.pins.resize(pinIdx);
 
         //处理guide2D文件
-        getline(guide2Dfile, guide2Dline); //读取掉net的名字
-        getline(guide2Dfile, guide2Dline); //读取掉'('
-        while(getline(guide2Dfile, guide2Dline) && guide2Dline != ")"){ //处理path
-            guide2Dline.erase(remove_if(guide2Dline.begin(), guide2Dline.end(), [&redundant_chars2](char c) {
-                return redundant_chars2.find(c) != string::npos;
-                }), guide2Dline.end());
-            istringstream ss(guide2Dline);
-            Path& path = net.guide2D.emplace_back();
-            ss >> path.start.x >> path.start.y >> path.end.x >> path.end.y;
-
-            for(auto it = OptionalLocations_of_pins.begin();it != OptionalLocations_of_pins.end();){
-                bool flag = false;
-                for(const Location& loc : it -> first){
-                    if(loc.x == path.start.x && loc.y == path.start.y){
-                        net.pins[it -> second] = loc;
-                        path.startisPin = true;                          //标记此path是pin
-                        path.startPinIdx = it -> second;
-                        flag = true;
-                        break;
-                    }else if(loc.x == path.end.x && loc.y == path.end.y){
-                        net.pins[it -> second] = loc;
-                        path.endisPin = true;                          //标记此path是pin
-                        path.endPinIdx = it -> second;
-                        flag = true;
-                        break;
-                    }
-                }
-                if(flag){
-                    it = OptionalLocations_of_pins.erase(it);
-                }else{
-                    it ++;
-                }
-            }
-
-            Segment seg;
-            while(ss >> seg.start.x >> seg.start.y >> seg.end.x >> seg.end.y)
-                net.guide2D.back().segments.emplace_back(seg);
-        }
+        net.guide2DTree.load(guide2Dfile);
 
         //整合两个文件,固定net中pin的位置
+        for(auto& OptionalLocations_of_pin : OptionalLocations_of_pins){
+            for(auto& loc : OptionalLocations_of_pin.first){
+                if(net.guide2DTree.targetPin(OptionalLocations_of_pin.second, loc)){
+                    net.pins[OptionalLocations_of_pin.second] = loc;
+                    break;
+                }
+            }
+        }
     }
     netfile.close();
     guide2Dfile.close();
