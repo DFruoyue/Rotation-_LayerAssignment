@@ -26,7 +26,7 @@ namespace XZA{
         public:
             Guide2DTree()
                 :root(nullptr){}
-//            ~Guide2DTree(){freeTree(root);}
+            ~Guide2DTree(){freeTree(root);}
             
             void load(std::ifstream& file);
             void output() const;

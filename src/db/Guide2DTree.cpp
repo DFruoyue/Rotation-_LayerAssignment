@@ -22,14 +22,14 @@ void XZA::Guide2DTree::load(std::ifstream& file){
     lines.emplace_back(std::istringstream(line));
     }//得到所有的path
 
+    //处理root
     auto &ss = lines.back();
     ss >> root-> loc.x >> root-> loc.y;
-
     lines.pop_back();
+
     //用一个queue来还原Tree
     std::queue<TreeNode*> q;
     q.push(root);
-
     for (auto it = lines.rbegin(); it != lines.rend(); ++it) {  
         //每次处理一条path, 从后往前处理
         auto& ss = *it;
@@ -80,12 +80,16 @@ bool XZA::Guide2DTree::targetPin(const int& pinIdx, const XZA::Location& loc){
     return flag;
 }
 void XZA::Guide2DTree::freeTree(XZA::TreeNode* node){
-    if(node == nullptr)
-        return;
-    for(auto& child : node -> childs){
-        freeTree(child);
+    if(node != nullptr)
+    {
+        for(auto& child : node -> childs){
+            if(child != nullptr){
+                freeTree(child);
+                child = nullptr;
+            }
+        }
+        delete node;
     }
-    delete node;
 }
 void XZA::Guide2DTree::output() const{
     _output(root, 0);
