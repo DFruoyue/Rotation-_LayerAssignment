@@ -60,6 +60,7 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
 void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const string& guide2Dfilename){
     ifstream netfile(netfilename);
     ifstream guide2Dfile(guide2Dfilename);
+
     const string redundant_chars1 = "(),[]";
     if(!netfile.is_open()){
         cerr << "Error: Cannot open file " << netfilename << endl;
@@ -80,8 +81,8 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
 
         auto &net = nets.emplace_back(name);
         netNum ++;
-        cout << count++ << endl;
 
+        cout << count++ << endl << name << endl;
         vector<std::pair<PinOptionalLocations, int>> OptionalLocations_of_pins;      //存储每一个pin可选的位置和其序号
         
         //处理net文件
@@ -100,10 +101,10 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
             pinIdx ++;
         }
         net.pinNum = pinIdx;
-        nets.back().pins.resize(pinIdx);
+        net.pins.resize(pinIdx);
 
         //处理guide2D文件
-        nets.back().guide2D.load(guide2Dfile);
+        net.guide2D.load(guide2Dfile);
 
         //整合两个文件,固定net中pin的位置
         for(auto& OptionalLocations_of_pin : OptionalLocations_of_pins){

@@ -19,6 +19,7 @@ namespace XZA{
         vector<int> OverFlowLayerWeight;
         vector<int> HorizantalLengths;
         vector<int> VerticalLengths;
+        
         vector<LayerInfo> layers;
 
         // Net Information

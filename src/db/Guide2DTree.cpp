@@ -6,6 +6,8 @@
 #include <queue>
 #include <iostream>
 #include <stack>
+const char* BLUE = "\033[34m";
+const char* RESET = "\033[0m";
 void XZA::Guide2DTree::load(std::ifstream& file){
     const std::string redundant_chars2 = ":->(),[]";
     root = new TreeNode();
@@ -13,7 +15,6 @@ void XZA::Guide2DTree::load(std::ifstream& file){
     std::vector<std::istringstream> lines;
     //读取掉net的名字和读取掉'('
     getline(file, line);
-    std::cout << line << std::endl;
     getline(file, line);
 
     while(getline(file, line) && line != ")"){ //处理path
@@ -115,8 +116,7 @@ void XZA::Guide2DTree::output() const{
 }
 const int internal = 4;
 void XZA::Guide2DTree::_output(XZA::TreeNode* node, int depth) const{
-    const char* BLUE = "\033[34m";
-    const char* RESET = "\033[0m";
+
     if(node == nullptr)
         return;
     std::cout << std::string(depth * internal, ' ');

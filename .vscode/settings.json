@@ -62,7 +62,8 @@
         "source_location": "cpp",
         "concepts": "cpp",
         "numeric": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "iterator": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }
