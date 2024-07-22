@@ -28,11 +28,6 @@ namespace XZA{
         public:
             Guide2DTree()
                 :root(nullptr){}
-            ~Guide2DTree(){
-                std::ofstream DebugLog("DebugLog.txt", std::ios::app);
-                DebugLog << "FreeTree Log:\n";
-                freeTree_withlog(root, 0);
-            }
             
             void load(std::ifstream& file);
             void output() const;
