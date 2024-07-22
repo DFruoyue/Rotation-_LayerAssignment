@@ -82,13 +82,16 @@ bool XZA::Guide2DTree::targetPin(const int& pinIdx, const XZA::Location& loc){
 void XZA::Guide2DTree::freeTree(XZA::TreeNode* node){
     if(node != nullptr)
     {
-        for(auto& child : node -> childs){
-            if(child != nullptr){
-                freeTree(child);
-                child = nullptr;
+        if(!node -> childs.empty()){
+            for(auto& child : node -> childs){
+                if(child != nullptr){
+                    freeTree(child);
+                }
             }
+            node -> childs.clear();
         }
         delete node;
+        node = nullptr;
     }
 }
 void XZA::Guide2DTree::output() const{
