@@ -6,8 +6,7 @@ namespace XZA{
     enum Direction{
         HORIZONTAL = 0,
         VERTICAL = 1,
-        VIA = 2,
-        UNDEFINED = 3
+        UNDEFINED = 2
     };
     struct Location{//Gcell的位置，用整数表示
         //layer

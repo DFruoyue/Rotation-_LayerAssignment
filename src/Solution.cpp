@@ -175,7 +175,7 @@ void Guide::output() const{
     cout << "Wires: " << wires.size() << endl;
     const string my_blank = string(4, ' ');
     for(int i=0; i<firstpinIdx; i++){
-        cout << my_blank << wires[i].getEdge() << endl;
+        cout << my_blank << wires[i].getEdge() << ' ' << wires[i].direction << endl;
     }
     cout << "Vias: " << vias.size() << endl;
     for(auto& via: vias){

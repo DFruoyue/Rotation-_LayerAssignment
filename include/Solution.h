@@ -49,7 +49,8 @@ namespace XZA{
         friend class Guide;
 
         private:
-            int maxLayer, minLayer;
+            int maxLayer = -1;
+            int minLayer = INFINITY;
             int x, y;
             std::vector<Clue>   NodeClues;
             void addNode(const Clue& NodeClue){
@@ -69,21 +70,40 @@ namespace XZA{
     class Wire{
         public:
             Node start, end;
+            Direction direction;
             Edge getEdge() const{
                 return Edge(start.loc, end.loc);
             }
-            Wire()
-            : start(), end()
-            {}
             Wire(const Node& start, const Node& end)
                 : start(start), end(end)
-            {}
+            {
+                if(start.loc.x != end.loc.x)
+                    direction = HORIZONTAL;
+                else if(start.loc.y != end.loc.y)
+                    direction = VERTICAL;
+                else
+                    direction = UNDEFINED;
+            }
             Wire(const Location& startloc, const Location& endloc)
                 : start(startloc, false), end(endloc, false)
-            {}
+            {
+                if(startloc.x != endloc.x)
+                    direction = HORIZONTAL;
+                else if(startloc.y != endloc.y)
+                    direction = VERTICAL;
+                else
+                    direction = UNDEFINED;
+            }
             Wire(const int& lstart, const int& xstart, const int& ystart, const int& lend, const int& xend, const int& yend)
                 : start(lstart, xstart, ystart, false), end(lend, xend, yend, false)
-            {}
+            {
+                if(xstart != xend)
+                    direction = HORIZONTAL;
+                else if(ystart != yend)
+                    direction = VERTICAL;
+                else
+                    direction = UNDEFINED;
+            }
         friend class Guide;
     };
 
@@ -98,7 +118,9 @@ namespace XZA{
         public:
             std::string netname;
             Guide(const std::string& name): netname(name){}
-            
+            int getfirstpinIdx() const{
+                return firstpinIdx;
+            }
             
             void output() const;                                        //输出Guide
 
@@ -111,6 +133,7 @@ namespace XZA{
     };
     
     class Solution{
+        friend class LayerDistributor;
         private:
             std::vector<Guide> guides;
         public:

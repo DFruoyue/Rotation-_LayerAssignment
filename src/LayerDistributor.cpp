@@ -23,6 +23,13 @@ void LayerDistributor::outputdesign(const string& outfilename){
 
 
 void LayerDistributor::init(){
+    Timer timer("初始化LayerDistributor");
+    for(auto& guide: sl.guides){
+        for(int i = 0; i < guide.getfirstpinIdx(); i++){
+            
+        }
+    }
+    timer.output("初始化LayerDistributor");
 }
 
 void LayerDistributor::merge(){
