@@ -28,9 +28,9 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
 
     file >> layerNum >> xSize >> ySize >> unitWLcost >> unitViacost;
 
-    OverFlowLayerWeight.reserve(layerNum);
+    layers.resize(layerNum);
     for(int i = 0; i < layerNum; i++)
-        file >> OverFlowLayerWeight[i];
+        file >> layers[i].overFlowLayerWeight;
 
     HorizantalLengths.reserve(xSize);
     for(int i = 0; i < xSize; i++)
@@ -40,15 +40,18 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
     for(int i = 0; i < ySize; i++)
         file >> VerticalLengths[i];
 
-    layers.reserve(layerNum);
+    
     for(int l = 0; l < layerNum; l++){
         file >> layers[l].name;
         int dir; file >> dir; layers[l].direction = (XZA::Direction)dir;
         file >> layers[l].minlength;
-        layers[l].capacity.resize(xSize, vector<int>(ySize));
+        layers[l].conjection.resize(xSize, vector<Conjection>(ySize));
+        int capacity;
         for(int x = 0; x < xSize; x++)
-            for(int y = 0; y < ySize; y++)
-                file >> layers[l].capacity[x][y];
+            for(int y = 0; y < ySize; y++){
+                file >> capacity;
+                layers[l].conjection[x][y].set(0, capacity);
+            }
     }
 
     file.close();

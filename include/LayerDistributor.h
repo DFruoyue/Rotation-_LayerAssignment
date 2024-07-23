@@ -21,5 +21,6 @@ namespace XZA{
         void init();
         void outputdesign(const string& outfilename = "output.txt");
         void outoutdebug() const;
+        double costofaddWireinLayer(const int& layer, const Wire& wire) const ;
     };
 }

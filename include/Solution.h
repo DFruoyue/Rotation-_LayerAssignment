@@ -65,6 +65,12 @@ namespace XZA{
             Edge getEdge() const{
                 return Edge(minLayer, x, y, maxLayer, x, y);
             }
+            int getminLayer() const{
+                return minLayer;
+            }
+            int getmaxLayer() const{
+                return maxLayer;
+            }
     };
     
     class Wire{
@@ -130,6 +136,18 @@ namespace XZA{
             void addNodetoVia(const int& ViaIdx, const Clue& NodeClue); //将node添加到Via中
             void setLayerofWire(const int& WireIdx, const int& l);      //设置wire的layer
             const int Link(const Clue& nc1, const Clue& nc2);           //在wire之间创建Via,自动管理
+            Wire& getWire(const int& i){
+                return wires[i];
+            }
+            Via& getVia(const int& i){
+                return vias[i];
+            }
+            Direction getDirectionofWire(const int& i){
+                return wires[i].direction;
+            }
+            int getLayerofWire(const int& i){
+                return wires[i].start.loc.l;
+            }
     };
     
     class Solution{

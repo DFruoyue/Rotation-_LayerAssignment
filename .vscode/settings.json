@@ -64,7 +64,8 @@
         "numeric": "cpp",
         "stack": "cpp",
         "iterator": "cpp",
-        "__availability": "cpp"
+        "__availability": "cpp",
+        "functional": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

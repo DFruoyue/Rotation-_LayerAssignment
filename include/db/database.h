@@ -11,11 +11,12 @@ namespace XZA{
         // Routing Resource
         int netNum;
         int layerNum;
+
         int xSize;
         int ySize;
         double unitWLcost;
         int unitViacost;
-        vector<int> OverFlowLayerWeight;
+
         vector<int> HorizantalLengths;
         vector<int> VerticalLengths;
         
@@ -40,12 +41,13 @@ namespace XZA{
             const string& netfile
         );
         void outputdebug() const;
-        
-        friend void check_path_node_is_pin(const Database& db);
-        friend void check_guide2D(const Database& db);
 
         friend class LayerDistributor;
         const int getnetNum() const {return netNum;}
+
+        Direction getDirectionofLayer(const int& l) const {
+            return layers[l].direction;
+        }
     };
 
 }
