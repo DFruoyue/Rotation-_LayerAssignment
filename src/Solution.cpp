@@ -21,11 +21,10 @@ void Solution::loadfile(const string& filename){
     }
 
     std::string line;
-    std::vector<std::istringstream> lines;
     
-
+    string name;
     while(true){
-        string name;
+        std::vector<std::istringstream> lines;
         //读取掉net的名字和读取掉'('
         if(!getline(file, name))
             break;
@@ -44,11 +43,11 @@ void Solution::loadfile(const string& filename){
 
         queue<Clue> q;
         int count = 0;
-        int TailWireIdx = 0;
-        int HeadWireIdx = 0;
+        int TailWireIdx = -1;
+        int HeadWireIdx = -1;
+        Wire* pHeadWire = nullptr;
+        Wire* pTailWire = nullptr;
         for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
-            TailWireIdx = -1;
-            HeadWireIdx = -1;
             count ++;  
             //每次处理一条path, 从后往前处理
             auto& ss = *it;
@@ -73,8 +72,8 @@ void Solution::loadfile(const string& filename){
             HeadWireIdx = guide.wires.size() - 1;
 
             //对vector内容取指针后操作需要确保vector不会resize
-            Wire* pHeadWire = & guide.wires[HeadWireIdx];
-            Wire* pTailWire = & guide.wires[TailWireIdx];
+            pHeadWire = & guide.wires[HeadWireIdx];
+            pTailWire = & guide.wires[TailWireIdx];
 
             if(count == 1){
                 //处理第一条path,queue初始化
@@ -87,6 +86,8 @@ void Solution::loadfile(const string& filename){
                     if(node.loc.x != pHeadWire->start.loc.x 
                     || node.loc.y != pHeadWire->start.loc.y){
                         q.pop();
+                    }else{
+                        break;
                     }
                 }
                 if(q.empty()){
@@ -100,6 +101,10 @@ void Solution::loadfile(const string& filename){
                 //将末尾的Node添加至queue
                 q.push(Clue(TailWireIdx, END));
             }
+            TailWireIdx = -1;
+            HeadWireIdx = -1;
+            pHeadWire = nullptr;
+            pTailWire = nullptr;
         }
 
         //释放queue
@@ -111,16 +116,25 @@ void Solution::loadfile(const string& filename){
 }
 
 void Guide::targetPin(const Location& loc){
-    Wire& wire_Pin = wires.emplace_back(loc, loc);
-    Clue pinClue(wires.size() - 1, START);
     int wireNum = wires.size();
+    bool Pinbuilt = false;
+    Clue pinClue;
     for(int i=0;i < wireNum; i++){
-
         Wire& wire = wires[i];
         if(wire.start.loc.x == loc.x && wire.start.loc.y == loc.y){
+            if(!Pinbuilt){
+                Wire& wire_Pin = wires.emplace_back(loc, loc);
+                pinClue = Clue(wires.size() - 1, START);
+                Pinbuilt = true;
+            }
             Link(Clue(i, START), pinClue);
         }
         if(wire.end.loc.x == loc.x && wire.end.loc.y == loc.y){
+            if(!Pinbuilt){
+                Wire& wire_Pin = wires.emplace_back(loc, loc);
+                pinClue = Clue(wires.size() - 1, START);
+                Pinbuilt = true;
+            }
             Link(Clue(i, END), pinClue);
         }
     }
@@ -130,21 +144,23 @@ const int Guide::Link(const Clue& nc1, const Clue& nc2){
     int ViaIdx = -1;
     Node& node1 = getNode(nc1);
     Node& node2 = getNode(nc2);
+
+    if(node1.linkVia && node2.linkVia){
+        return node1.ViaIdx;
+    }
+
     if(node1.linkVia){
         ViaIdx = node1.ViaIdx;
-        node2.setVia(ViaIdx);
         addNodetoVia(ViaIdx, nc2);
+
     }
     else if(node2.linkVia){
         ViaIdx = node2.ViaIdx;
-        node1.setVia(ViaIdx);
         addNodetoVia(ViaIdx, nc1);
+
     }else{
         vias.emplace_back(node1.loc.x, node1.loc.y);
         ViaIdx = vias.size() - 1;
-
-        node1.setVia(ViaIdx);
-        node2.setVia(ViaIdx);
 
         addNodetoVia(ViaIdx, nc1);
         addNodetoVia(ViaIdx, nc2);
@@ -166,12 +182,17 @@ void Guide::output() const{
 }
 
 void Guide::addNodetoVia(const int& ViaIdx, const Clue& NodeClue){
-    Via& via = vias[ViaIdx];
-    Node& node = this -> getNode(NodeClue);
+    if(ViaIdx >= vias.size()){
+        cerr << "Error: ViaIdx out of range" << endl;
+        exit(1);
+    }
 
+    Via& via = vias[ViaIdx];
+    Node& node = getNode(NodeClue);
+
+    //对Via数据更新
     via.minLayer = std::min(via.minLayer, node.loc.l);
     via.maxLayer = std::max(via.maxLayer, node.loc.l);
-
     via.addNode(NodeClue);
 
     node.setVia(ViaIdx);
