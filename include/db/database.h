@@ -26,6 +26,7 @@ namespace XZA{
         vector<NetInfo> nets;
 
         // Load file
+
         void load_Routing_Resource_file(const string& filename);
         void load_Net_Information_file(const string& filename);
         void load_Guide2D_file(const string& filenam);
@@ -33,13 +34,11 @@ namespace XZA{
     public:
         Database(
             const string& capfile = "Data/nvdla.cap",
-            const string& netfile = "Data/nvdla.net",
-            const string& guide2Dfile = "Data/guide2D.txt"
+            const string& netfile = "Data/nvdla.net"
         );
         void load_data(
             const string& capfile,
-            const string& netfile,
-            const string& guide2Dfile
+            const string& netfile
         );
         void outputdebug() const;
         
@@ -47,6 +46,7 @@ namespace XZA{
         friend void check_guide2D(const Database& db);
 
         friend class LayerDistributor;
+        const int getnetNum() const {return netNum;}
     };
     
     extern Database db;

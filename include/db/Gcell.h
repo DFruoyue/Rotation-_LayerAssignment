@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <iostream>
 namespace XZA{
     enum Direction{
         HORIZONTAL = 0,
@@ -26,6 +27,9 @@ namespace XZA{
         }
         bool operator!=(const Location& other) const{
             return !(*this == other);
+        }
+        friend std::ostream& operator<<(std::ostream& os, const Location& loc){
+            return os << loc.l << " "  << loc.x << " " <<  loc.y;
         }
     };
     using PinOptionalLocations = std::vector<Location>;

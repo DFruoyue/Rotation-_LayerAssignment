@@ -7,19 +7,19 @@
 using namespace std;
 
 
-XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net", "Data/guide2D.txt");
+XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net");
 
-XZA::Database::Database(const string& capfile, const string& netfile, const string& guide2Dfile)
+XZA::Database::Database(const string& capfile, const string& netfile)
 :netNum(0),layerNum(0)
 {
     Timer timer;
-    load_data(capfile, netfile, guide2Dfile);
+    load_data(capfile, netfile);
     timer.output("初始化数据库");
 }
 
-void XZA::Database::load_data(const string& capfile, const string& netfile, const string& guide2Dfile){
+void XZA::Database::load_data(const string& capfile, const string& netfile){
     load_Routing_Resource_file(capfile);
-    load_Net_and_guide2D_file(netfile, guide2Dfile);
+    load_Net_Information_file(netfile);
 }
 
 void XZA::Database::load_Routing_Resource_file(const string& filename){
@@ -57,6 +57,7 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
     file.close();
 }
 
+/*
 void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const string& guide2Dfilename){
     ifstream netfile(netfilename);
     ifstream guide2Dfile(guide2Dfilename);
@@ -118,8 +119,7 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
     netfile.close();
     guide2Dfile.close();
 }
-
-/*
+*/
 
 void XZA::Database::load_Net_Information_file(const string& filename){
     ifstream file(filename);
@@ -142,7 +142,7 @@ void XZA::Database::load_Net_Information_file(const string& filename){
                 return redundant_chars.find(c) != string::npos;
                 }), line.end());
             istringstream ss(line);
-            PinOptionalLocations& pin = nets.back().pins.emplace_back();
+            PinOptionalLocations& pin = nets.back().pinsOptionalLocations.emplace_back();
             Location loc;
             while(ss >> loc.l >> loc.x >> loc.y)
                 pin.emplace_back(loc);
@@ -151,6 +151,7 @@ void XZA::Database::load_Net_Information_file(const string& filename){
     file.close();
 }
 
+/*
 void XZA::Database::load_Guide2D_file(const string& filename){
     ifstream file(filename);
     const string redundant_chars = ":->(),[]";

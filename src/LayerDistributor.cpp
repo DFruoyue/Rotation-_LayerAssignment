@@ -91,3 +91,18 @@ void LayerDistributor::init(){
     }
     timer.output("初始化pin和Via");
 }
+
+void LayerDistributor::merge(){
+    for(int i=0;i<db.netNum;i++){
+        auto& net = db.nets[i];
+        auto& guide = sl[i];
+
+        for(auto& pinOptionalLocation : net.pinsOptionalLocations){
+            for(auto& loc : pinOptionalLocation){
+                guide.targetPin(loc);
+                net.pins.emplace_back(loc);
+                break;
+            }
+        }
+    }
+}

@@ -24,7 +24,7 @@ namespace XZA{
         int pinNum;
         vector<Location> pins;
         Guide2DTree guide2D;
-        Solution solution;
+        vector<PinOptionalLocations> pinsOptionalLocations;
 
         NetInfo(const string& name = ""): name(name), pinNum(0){}
         void output() const{
