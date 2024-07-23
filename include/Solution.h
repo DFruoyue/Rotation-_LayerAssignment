@@ -19,7 +19,7 @@ namespace XZA{
             : start(l1, x1, y1), end(l2, x2, y2)
         {}
         friend std::ostream& operator<<(std::ostream& os, const Edge& edge){
-            return os << edge.start << edge.end;
+            return os << edge.start << " "<< edge.end;
         }
     };
 
@@ -93,16 +93,18 @@ namespace XZA{
         private:
             std::vector<Wire> wires;
             std::vector<Via> vias;
-            
+            int firstpinIdx = -1;
+
         public:
             std::string netname;
             Guide(const std::string& name): netname(name){}
-            void targetPin(const Location& loc);
+            
             
             void output() const;                                        //输出Guide
 
             Node& getNode(const Clue& NodeClue);                        //获取Node
 
+            bool targetPin(const Location& loc);                        //标记pin的loc是否有效
             void addNodetoVia(const int& ViaIdx, const Clue& NodeClue); //将node添加到Via中
             void setLayerofWire(const int& WireIdx, const int& l);      //设置wire的layer
             const int Link(const Clue& nc1, const Clue& nc2);           //在wire之间创建Via,自动管理

@@ -10,7 +10,6 @@ using namespace std;
 
 //每一个net都有一个guide, 一个guide包含了所有的wire和via
 void Solution::loadfile(const string& filename){
-
     Timer timer("读取guide2D.txt");
     const string redundant_chars2 = ":->(),[]";
 
@@ -30,7 +29,6 @@ void Solution::loadfile(const string& filename){
             break;
         getline(file, line);
         auto& guide = guides.emplace_back(name);
-        cout << name << endl;
 
         while(getline(file, line) && line != ")"){ //处理path
             line.erase(remove_if(line.begin(), line.end(), [&redundant_chars2](char c) {
@@ -115,7 +113,7 @@ void Solution::loadfile(const string& filename){
     timer.output("读取guide2D.txt");
 }
 
-void Guide::targetPin(const Location& loc){
+bool Guide::targetPin(const Location& loc){
     int wireNum = wires.size();
     bool Pinbuilt = false;
     Clue pinClue;
@@ -138,6 +136,10 @@ void Guide::targetPin(const Location& loc){
             Link(Clue(i, END), pinClue);
         }
     }
+    if(Pinbuilt && firstpinIdx == -1){
+        firstpinIdx = pinClue.first;
+    }
+    return Pinbuilt;
 }
 
 const int Guide::Link(const Clue& nc1, const Clue& nc2){
@@ -171,9 +173,9 @@ const int Guide::Link(const Clue& nc1, const Clue& nc2){
 void Guide::output() const{
     cout << "Guide: " << netname << endl;
     cout << "Wires: " << wires.size() << endl;
-    const string my_blank = string(7, ' ');
-    for(auto& wire: wires){
-        cout << my_blank << wire.getEdge() << endl;
+    const string my_blank = string(4, ' ');
+    for(int i=0; i<firstpinIdx; i++){
+        cout << my_blank << wires[i].getEdge() << endl;
     }
     cout << "Vias: " << vias.size() << endl;
     for(auto& via: vias){

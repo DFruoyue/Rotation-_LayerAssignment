@@ -33,11 +33,20 @@ void LayerDistributor::merge(){
 
         for(auto& pinOptionalLocation : net.pinsOptionalLocations){
             for(auto& loc : pinOptionalLocation){
-                guide.targetPin(loc);
-                net.pins.emplace_back(loc);
-                break;
+                if(guide.targetPin(loc)){
+                    net.pins.emplace_back(loc);
+                    break;
+                }
             }
         }
     }
     timer.output("合并guide2D.txt和net信息");
+}
+
+void LayerDistributor::outoutdebug() const{
+    for(int i=0;i<db.netNum;i++){
+        db.nets[i].output();
+        sl[i].output();
+        cin.get();
+    }
 }

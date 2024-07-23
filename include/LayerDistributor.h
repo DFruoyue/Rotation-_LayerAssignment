@@ -20,5 +20,6 @@ namespace XZA{
         };
         void init();
         void outputdesign(const string& outfilename = "output.txt");
+        void outoutdebug() const;
     };
 }
