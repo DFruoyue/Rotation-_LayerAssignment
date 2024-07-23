@@ -9,8 +9,9 @@ namespace XZA{
             std::chrono::time_point<std::chrono::high_resolution_clock> start;
             std::chrono::duration<double> duration;
         public:
-            Timer(){
+            Timer(const std::string& task){
                 start = std::chrono::high_resolution_clock::now();
+                std::cout << task << "*..." << std::endl;
             }
             void output(const std::string& task, const int& precision = 4){
                 duration = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - start);

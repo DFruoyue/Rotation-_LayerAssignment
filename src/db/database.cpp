@@ -6,13 +6,10 @@
 #include "timer.hpp"
 using namespace std;
 
-
-XZA::Database XZA::db = XZA::Database("Data/nvdla.cap", "Data/nvdla.net");
-
 XZA::Database::Database(const string& capfile, const string& netfile)
 :netNum(0),layerNum(0)
 {
-    Timer timer;
+    Timer timer("初始化数据库");
     load_data(capfile, netfile);
     timer.output("初始化数据库");
 }

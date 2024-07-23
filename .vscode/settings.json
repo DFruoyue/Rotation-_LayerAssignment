@@ -63,7 +63,8 @@
         "concepts": "cpp",
         "numeric": "cpp",
         "stack": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "__availability": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

@@ -5,6 +5,11 @@
 #include <string>
 #include <fstream>
 namespace XZA{
+    enum Forward{
+        START,
+        END
+    };
+    using Clue = std::pair<int, Forward>;
     struct Edge{
         Location start, end;
         Edge(const Location& start,const Location& end)
@@ -24,79 +29,57 @@ namespace XZA{
             Location loc;
             bool linkVia;
             Node(const Location& loc, const bool& linkVia = false)
-                : loc(loc), linkVia(linkVia)
+                : loc(loc), linkVia(linkVia), ViaIdx(-1)
             {}
             Node(const int& l, const int& x, const int& y, const bool& linkVia = false)
-                : loc(l, x, y), linkVia(linkVia)
+                : loc(l, x, y), linkVia(linkVia), ViaIdx(-1)
+            {}
+            Node(): loc(-1, 0, 0), linkVia(false), ViaIdx(-1)
             {}
 
-            Via* pVia;
+            int ViaIdx;
 
-            void setVia(Via* pVia){
+            void setVia(const int ViaIdx){
                 linkVia = true;
-                this -> pVia = pVia;
+                this -> ViaIdx = ViaIdx;
             }
     };
 
     class Via{
-        friend class Wire;
+        friend class Guide;
 
         private:
-            std::vector<Node*>   pNodes;
-
+            int maxLayer, minLayer;
+            int x, y;
+            std::vector<Clue>   NodeClues;
+            void addNode(const Clue& NodeClue){
+                NodeClues.push_back(NodeClue);
+            }
         public:
-            Via(std::vector<Node*> pNodes)
-                : pNodes(pNodes)
-            {}
             Via()
             {}
-
-            void addNode(Node* pNode){
-                bool isInserted = false;
-                for(int i=0;i<pNodes.size();i++){
-                    if(pNodes[i]-> loc.l >= pNode->loc.l){
-                        pNodes.insert(pNodes.begin() + i, pNode);
-                        isInserted = true;
-                        break;
-                    }
-                }
-                if(!isInserted){
-                    pNodes.push_back(pNode);
-                }
-            }
+            Via(const int&x, const int& y)
+                :x(x), y(y)
+            {}
             Edge getEdge() const{
-                return Edge(pNodes[0]->loc, pNodes[pNodes.size() - 1]->loc);
-            }
-            void update(){
-                for(int i=0;i<pNodes.size() - 1;i++){
-                    if(pNodes[i]->loc.l > pNodes[i+1]->loc.l)
-                        std::swap(pNodes[i], pNodes[i+1]);
-                }
+                return Edge(minLayer, x, y, maxLayer, x, y);
             }
     };
     
     class Wire{
-        private:
-            Node start, end;
-
         public:
+            Node start, end;
             Edge getEdge() const{
                 return Edge(start.loc, end.loc);
             }
-            void setLayer(const int& l){
-                start.loc.l = l;
-                if(start.linkVia)
-                    start.pVia -> update();
-
-                end.loc.l = l;
-                if(end.linkVia)
-                    end.pVia -> update();
-            }
             Wire()
-            : start(-1, 0, 0, false), end(-1, 0, 0, false)
+            : start(), end()
             {}
-            Wire(const Location& start, const Location& end)
-                : start(start, false), end(end, false)
+            Wire(const Node& start, const Node& end)
+                : start(start), end(end)
+            {}
+            Wire(const Location& startloc, const Location& endloc)
+                : start(startloc, false), end(endloc, false)
             {}
             Wire(const int& lstart, const int& xstart, const int& ystart, const int& lend, const int& xend, const int& yend)
                 : start(lstart, xstart, ystart, false), end(lend, xend, yend, false)
@@ -106,17 +89,42 @@ namespace XZA{
 
 
     class Guide{
+        friend class Solution;
         private:
             std::vector<Wire> wires;
             std::vector<Via> vias;
             
         public:
             std::string netname;
-            Guide();
-            void loadfile(std::ifstream& guide2Dfile);//初始化, 创建Via和Wire
+            Guide(const std::string& name): netname(name){}
             void targetPin(const Location& loc);
-            const Via* Link(Node* pNode1, Node* pNode2);    //在wire之间创建Via,自动管理
-            void output() const;
+            
+            void output() const;                                        //输出Guide
+
+            Node& getNode(const Clue& NodeClue);                        //获取Node
+
+            void addNodetoVia(const int& ViaIdx, const Clue& NodeClue); //将node添加到Via中
+            void setLayerofWire(const int& WireIdx, const int& l);      //设置wire的layer
+            const int Link(const Clue& nc1, const Clue& nc2);           //在wire之间创建Via,自动管理
     };
-    using Solution = std::vector<Guide>;
+    
+    class Solution{
+        private:
+            std::vector<Guide> guides;
+        public:
+            void reserve(const int& n){
+                guides.reserve(n);
+            };
+            Guide& operator[](const int& i){
+                return guides[i];
+            }
+            void output() const{
+                for(auto& guide: guides)
+                    guide.output();
+            }
+            void loadfile(const std::string& filename);
+            Solution(const std::string& filename){
+                loadfile(filename);
+            }
+    };
 }

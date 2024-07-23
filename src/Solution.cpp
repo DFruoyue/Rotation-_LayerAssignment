@@ -4,22 +4,34 @@
 #include <iostream>
 #include <sstream>
 #include <queue>
+#include "timer.hpp"
 using namespace XZA;
 using namespace std;
 
 //每一个net都有一个guide, 一个guide包含了所有的wire和via
-void Guide::loadfile(ifstream& file){
-    string  line;
-    vector<string> lines;
+void Solution::loadfile(const string& filename){
+
+    Timer timer("读取guide2D.txt");
     const string redundant_chars2 = ":->(),[]";
 
+    ifstream file(filename);
+    if(!file.is_open()){
+        cerr << "Error: Cannot open file " << filename << endl;
+        exit(1);
+    }
+
+    std::string line;
+    std::vector<std::istringstream> lines;
+    
+
     while(true){
-        std::string line;
-        std::vector<std::istringstream> lines;
+        string name;
         //读取掉net的名字和读取掉'('
+        if(!getline(file, name))
+            break;
         getline(file, line);
-        netname = line;
-        getline(file, line);
+        auto& guide = guides.emplace_back(name);
+        cout << name << endl;
 
         while(getline(file, line) && line != ")"){ //处理path
             line.erase(remove_if(line.begin(), line.end(), [&redundant_chars2](char c) {
@@ -27,95 +39,117 @@ void Guide::loadfile(ifstream& file){
         lines.emplace_back(istringstream(line));
         }//得到所有的path
 
-        wires.reserve(lines.size());
+        lines.pop_back();   //去掉多余的点
+        int startx, starty, endx, endy;
 
-        auto &ss = lines.back();
-        Wire& rootwire = wires.emplace_back();
-        ss >> rootwire.start.loc.x >> rootwire.start.loc.y >> rootwire.end.loc.x >> rootwire.end.loc.y;
-        lines.pop_back();
-
-        //用一个queue来还原Tree
-        std::queue<Node*> q;
-        q.push( &wires[0].start );
-        int tempx1, tempy1, tempx2, tempy2;
-        for (auto it = lines.rbegin(); it != lines.rend(); ++it) {  
+        queue<Clue> q;
+        int count = 0;
+        int TailWireIdx = 0;
+        int HeadWireIdx = 0;
+        for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
+            TailWireIdx = -1;
+            HeadWireIdx = -1;
+            count ++;  
             //每次处理一条path, 从后往前处理
             auto& ss = *it;
 
-            ss >> tempx1 >> tempy1 >> tempx2 >> tempy2; //读取掉开头
+            ss >> endx >> endy >> startx >> starty; //读取掉开头
 
-            //迭代掉开头,确定现在应该添加的node
-            while(tempx1 != q.front()->loc.x || tempy1 != q.front()->loc.y)
-                q.pop();
-            Via via;
-            const int NewwireIdx = wires.size();
+            ss >> endx >> endy >> startx >> starty; //读取第一段
+            guide.wires.emplace_back(-1, startx, starty, -1, endx, endy);
+            TailWireIdx = guide.wires.size() - 1;
 
-            while(ss >> tempx1 >> tempy1 >> tempx2 >> tempy2){
-                wires.emplace_back(-1, tempx1, tempy1, -1, tempx2, tempy2);
-                //从第二个segment被添加起,将新添加的segment与之前的segment连接Via
-                if(wires.size() > NewwireIdx + 1){
-                    Wire& lastWire = wires.back();
-                    Wire& preWire = wires[wires.size() - 2];
-                    
-                    Link(&lastWire.start, &preWire.end);
-                }
+            while(ss >> endx >> endy >> startx >> starty){//如果有后续Segment
+                //处理每一个segment
+                Node start(-1, startx, starty);
+                Node end(-1, endx, endy);
+
+                guide.wires.emplace_back(start, end);
+                int newWireIdx = guide.wires.size() - 1;
+                //将新加的segment的end和上一个segment的start连接
+                guide.Link(Clue(newWireIdx, END), Clue(newWireIdx-1, START));
             }
-            //将开头的node添加Via
-            Link(&wires[NewwireIdx].start, q.front());
 
+            HeadWireIdx = guide.wires.size() - 1;
 
-            //将末尾的Node添加至queue
-            q.push(&wires.back().end);
+            //对vector内容取指针后操作需要确保vector不会resize
+            Wire* pHeadWire = & guide.wires[HeadWireIdx];
+            Wire* pTailWire = & guide.wires[TailWireIdx];
 
+            if(count == 1){
+                //处理第一条path,queue初始化
+                q.push(Clue(HeadWireIdx, START));
+                q.push(Clue(TailWireIdx, END));
+            }else{
+                while(!q.empty()){
+                    Clue clue = q.front();
+                    Node& node = guide.getNode(clue);
+                    if(node.loc.x != pHeadWire->start.loc.x 
+                    || node.loc.y != pHeadWire->start.loc.y){
+                        q.pop();
+                    }
+                }
+                if(q.empty()){
+                    cerr << "Error: Cannot find the start node of the path" << endl;
+                    exit(1);
+                }
+
+                //将开头的Node添加Via
+                guide.Link(q.front(), Clue(HeadWireIdx, START));
+
+                //将末尾的Node添加至queue
+                q.push(Clue(TailWireIdx, END));
+            }
         }
 
         //释放queue
         while(!q.empty())
             q.pop();
     }
+    file.close();
+    timer.output("读取guide2D.txt");
 }
 
 void Guide::targetPin(const Location& loc){
     Wire& wire_Pin = wires.emplace_back(loc, loc);
+    Clue pinClue(wires.size() - 1, START);
     int wireNum = wires.size();
     for(int i=0;i < wireNum; i++){
+
         Wire& wire = wires[i];
-
-        if(wire.start.loc.x == loc.x && wire.start.loc.y == loc.y)
-            Link(&wire.start, &wire_Pin.start);
-
-        if(wire.end.loc.x == loc.x && wire.end.loc.y == loc.y)
-            Link(&wire.end, &wire_Pin.start);
-
+        if(wire.start.loc.x == loc.x && wire.start.loc.y == loc.y){
+            Link(Clue(i, START), pinClue);
+        }
+        if(wire.end.loc.x == loc.x && wire.end.loc.y == loc.y){
+            Link(Clue(i, END), pinClue);
+        }
     }
 }
 
-const Via* Guide::Link(Node* pnode1, Node* pnode2){
-    Via* pVia = nullptr;
-    if(pnode1 -> linkVia){
-        pnode2 -> linkVia = true;
-
-        pVia = pnode1 -> pVia;
-
-        pVia -> addNode(pnode2);
+const int Guide::Link(const Clue& nc1, const Clue& nc2){
+    int ViaIdx = -1;
+    Node& node1 = getNode(nc1);
+    Node& node2 = getNode(nc2);
+    if(node1.linkVia){
+        ViaIdx = node1.ViaIdx;
+        node2.setVia(ViaIdx);
+        addNodetoVia(ViaIdx, nc2);
     }
-    else if(pnode2 -> linkVia){
-        pnode1 -> linkVia = true;
-
-        pVia = pnode2 -> pVia;
-
-        pVia -> addNode(pnode1);
-
+    else if(node2.linkVia){
+        ViaIdx = node2.ViaIdx;
+        node1.setVia(ViaIdx);
+        addNodetoVia(ViaIdx, nc1);
     }else{
-        pnode1 -> linkVia = true;
-        pnode2 -> linkVia = true;
+        vias.emplace_back(node1.loc.x, node1.loc.y);
+        ViaIdx = vias.size() - 1;
 
-        pVia = &vias.emplace_back();
+        node1.setVia(ViaIdx);
+        node2.setVia(ViaIdx);
 
-        pVia -> addNode(pnode1);
-        pVia -> addNode(pnode2);
+        addNodetoVia(ViaIdx, nc1);
+        addNodetoVia(ViaIdx, nc2);
     }
-    return pVia;
+    return ViaIdx;
 }
 
 void Guide::output() const{
@@ -129,4 +163,38 @@ void Guide::output() const{
     for(auto& via: vias){
         cout << my_blank << via.getEdge() << endl;
     }
+}
+
+void Guide::addNodetoVia(const int& ViaIdx, const Clue& NodeClue){
+    Via& via = vias[ViaIdx];
+    Node& node = this -> getNode(NodeClue);
+
+    via.minLayer = std::min(via.minLayer, node.loc.l);
+    via.maxLayer = std::max(via.maxLayer, node.loc.l);
+
+    via.addNode(NodeClue);
+
+    node.setVia(ViaIdx);
+}
+
+void Guide::setLayerofWire(const int& WireIdx, const int& l){
+    Wire& wire = wires[WireIdx];
+    wire.start.loc.l = l;
+    wire.end.loc.l = l;
+
+    if(wire.start.linkVia){
+        vias[wire.start.ViaIdx].minLayer = std::min(vias[wire.start.ViaIdx].minLayer, l);
+        vias[wire.start.ViaIdx].maxLayer = std::max(vias[wire.start.ViaIdx].maxLayer, l);
+    }
+    if(wire.end.linkVia){
+        vias[wire.end.ViaIdx].minLayer = std::min(vias[wire.end.ViaIdx].minLayer, l);
+        vias[wire.end.ViaIdx].maxLayer = std::max(vias[wire.end.ViaIdx].maxLayer, l);
+    }
+}
+
+Node& Guide::getNode(const Clue& NodeClue){
+    if(NodeClue.second == START)
+        return wires[NodeClue.first].start;
+    else
+        return wires[NodeClue.first].end;
 }

@@ -21,7 +21,4 @@ namespace XZA{
         void init();
         void outputdesign(const string& outfilename = "output.txt");
     };
-
-    Direction getDirection(const Location& loc1, const Location& loc2);
-    Direction getDirection2D(const TreeNode* node1, const TreeNode* node2);
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include "Gcell.h"
-#include "Guide2D.h"
 #include "Information.h"
 #include <iostream>
 #include <fstream>
@@ -48,6 +47,5 @@ namespace XZA{
         friend class LayerDistributor;
         const int getnetNum() const {return netNum;}
     };
-    
-    extern Database db;
+
 }
