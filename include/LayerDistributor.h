@@ -1,3 +1,5 @@
+#pragma once
+
 #include "database.h"
 #include "Solution.h"
 #include <iostream>
@@ -21,6 +23,6 @@ namespace XZA{
         void init();
         void outputdesign(const string& outfilename = "output.txt");
         void outoutdebug() const;
-        double costofaddWireinLayer(const int& layer, const Wire& wire) const ;
+        double costofaddWireinLayer(const int& layer, const int& WireIdx, Guide& guide);
     };
 }

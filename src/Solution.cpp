@@ -70,7 +70,7 @@ void Solution::loadfile(const string& filename){
             HeadWireIdx = guide.wires.size() - 1;
 
             //对vector内容取指针后操作需要确保vector不会resize
-            pHeadWire = & guide.wires[HeadWireIdx];
+            Wire& HeadWire = guide.wires[HeadWireIdx];
             pTailWire = & guide.wires[TailWireIdx];
 
             if(count == 1){
@@ -81,8 +81,8 @@ void Solution::loadfile(const string& filename){
                 while(!q.empty()){
                     Clue clue = q.front();
                     Node& node = guide.getNode(clue);
-                    if(node.loc.x != pHeadWire->start.loc.x 
-                    || node.loc.y != pHeadWire->start.loc.y){
+                    if(node.loc.x != HeadWire.getStart().loc.x 
+                    || node.loc.y != HeadWire.getStart().loc.y){
                         q.pop();
                     }else{
                         break;
@@ -117,27 +117,24 @@ bool Guide::targetPin(const Location& loc){
     int wireNum = wires.size();
     bool Pinbuilt = false;
     Clue pinClue;
-    for(int i=0;i < wireNum; i++){
+    for(int i=0;i<wireNum;i++){
         Wire& wire = wires[i];
         if(wire.start.loc.x == loc.x && wire.start.loc.y == loc.y){
             if(!Pinbuilt){
-                Wire& wire_Pin = wires.emplace_back(loc, loc);
-                pinClue = Clue(wires.size() - 1, START);
+                Pin& pin = pins.emplace_back(loc);
+                pinClue = Clue(pins.size() - 1, PIN);
                 Pinbuilt = true;
             }
             Link(Clue(i, START), pinClue);
         }
         if(wire.end.loc.x == loc.x && wire.end.loc.y == loc.y){
             if(!Pinbuilt){
-                Wire& wire_Pin = wires.emplace_back(loc, loc);
-                pinClue = Clue(wires.size() - 1, START);
+                Pin& pin = pins.emplace_back(loc);
+                pinClue = Clue(pins.size() - 1, PIN);
                 Pinbuilt = true;
             }
             Link(Clue(i, END), pinClue);
         }
-    }
-    if(Pinbuilt && firstpinIdx == -1){
-        firstpinIdx = pinClue.first;
     }
     return Pinbuilt;
 }
@@ -172,12 +169,16 @@ const int Guide::Link(const Clue& nc1, const Clue& nc2){
 
 void Guide::output() const{
     cout << "Guide: " << netname << endl;
-    cout << "Wires: " << wires.size() << endl;
     const string my_blank = string(4, ' ');
-    for(int i=0; i<firstpinIdx; i++){
-        cout << my_blank << wires[i].getEdge() << ' ' << wires[i].direction << endl;
+    cout << pins.size() << " Pins:\n";
+    for(const Pin& pin: pins){
+        cout << my_blank << pin.node.loc << std::endl;
     }
-    cout << "Vias: " << vias.size() << endl;
+    cout << wires.size() << " Wires:\n";
+    for(const Wire& wire: wires){
+        cout << my_blank << wire.getEdge() << ' ' << wire.direction << endl;
+    }
+    cout << vias.size() << " Vias:\n";
     for(auto& via: vias){
         cout << my_blank << via.getEdge() << endl;
     }
@@ -216,7 +217,9 @@ void Guide::setLayerofWire(const int& WireIdx, const int& l){
 }
 
 Node& Guide::getNode(const Clue& NodeClue){
-    if(NodeClue.second == START)
+    if(NodeClue.second == PIN)
+        return pins[NodeClue.first].node;
+    else if(NodeClue.second == START)
         return wires[NodeClue.first].start;
     else
         return wires[NodeClue.first].end;

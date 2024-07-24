@@ -7,7 +7,8 @@
 namespace XZA{
     enum Forward{
         START,
-        END
+        END,
+        PIN
     };
     using Clue = std::pair<int, Forward>;
     struct Edge{
@@ -28,14 +29,10 @@ namespace XZA{
         public:
             Location loc;
             bool linkVia;
-            Node(const Location& loc, const bool& linkVia = false)
-                : loc(loc), linkVia(linkVia), ViaIdx(-1)
-            {}
-            Node(const int& l, const int& x, const int& y, const bool& linkVia = false)
-                : loc(l, x, y), linkVia(linkVia), ViaIdx(-1)
-            {}
-            Node(): loc(-1, 0, 0), linkVia(false), ViaIdx(-1)
-            {}
+            Node(const Node& node): loc(node.loc), linkVia(node.linkVia), ViaIdx(node.ViaIdx){}
+            Node(const Location& loc, const bool& linkVia = false): loc(loc), linkVia(linkVia), ViaIdx(-1){}
+            Node(const int& l, const int& x, const int& y, const bool& linkVia = false): loc(l, x, y), linkVia(linkVia), ViaIdx(-1){}
+            Node(): loc(-1, 0, 0), linkVia(false), ViaIdx(-1){}
 
             int ViaIdx;
 
@@ -56,6 +53,7 @@ namespace XZA{
             void addNode(const Clue& NodeClue){
                 NodeClues.push_back(NodeClue);
             }
+
         public:
             Via()
             {}
@@ -74,9 +72,13 @@ namespace XZA{
     };
     
     class Wire{
-        public:
+        friend class Guide;
+
+        private:
             Node start, end;
             Direction direction;
+
+        public:
             Edge getEdge() const{
                 return Edge(start.loc, end.loc);
             }
@@ -110,23 +112,34 @@ namespace XZA{
                 else
                     direction = UNDEFINED;
             }
+            Direction getDirection() const{return direction;}
+            const Node& getStart()const{return start;}
+            const Node& getEnd() const{return end;}
+    };
+
+    class Pin{
         friend class Guide;
+        private:
+            Node node;
+        public:
+            Pin(const Node& node): node(node){}
+            Pin(const Location& loc): node(loc, false){}
+            Pin(const int& l, const int& x, const int& y): node(l, x, y, false){}
+
     };
 
 
     class Guide{
         friend class Solution;
+        friend class LayerDistributor;
         private:
             std::vector<Wire> wires;
             std::vector<Via> vias;
-            int firstpinIdx = -1;
+            std::vector<Pin> pins;
 
         public:
             std::string netname;
             Guide(const std::string& name): netname(name){}
-            int getfirstpinIdx() const{
-                return firstpinIdx;
-            }
             
             void output() const;                                        //输出Guide
 
