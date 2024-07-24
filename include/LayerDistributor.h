@@ -18,7 +18,6 @@ namespace XZA{
         LayerDistributor(Database& database, Solution& sl):
             db(database),sl(sl){};
         void run(){
-            merge();     //pin不设置via,即pin所在的segement其层即为pin所在的层
         };
         void init();
         void outputdesign(const string& outfilename = "output.txt");

@@ -63,11 +63,17 @@ namespace XZA{
             Edge getEdge() const{
                 return Edge(minLayer, x, y, maxLayer, x, y);
             }
-            int getminLayer() const{
+            const int& getminLayer() const{
                 return minLayer;
             }
-            int getmaxLayer() const{
+            const int& getmaxLayer() const{
                 return maxLayer;
+            }
+            const int& getx() const{
+                return x;
+            }
+            const int& gety() const{
+                return y;
             }
     };
     
@@ -141,14 +147,15 @@ namespace XZA{
             std::string netname;
             Guide(const std::string& name): netname(name){}
             
-            void output() const;                                        //输出Guide
+            void output(std::ostream& os) const;                                        //输出Guide
 
             Node& getNode(const Clue& NodeClue);                        //获取Node
 
             bool targetPin(const Location& loc);                        //标记pin的loc是否有效
             void addNodetoVia(const int& ViaIdx, const Clue& NodeClue); //将node添加到Via中
             void setLayerofWire(const int& WireIdx, const int& l);      //设置wire的layer
-            const int Link(const Clue& nc1, const Clue& nc2);           //在wire之间创建Via,自动管理
+            int Link(const Clue& nc1, const Clue& nc2);           //在wire之间创建Via,自动管理
+            void addVia(const int& x, const int& y);                    //添加Via
             Wire& getWire(const int& i){
                 return wires[i];
             }
@@ -176,11 +183,16 @@ namespace XZA{
             }
             void output() const{
                 for(auto& guide: guides)
-                    guide.output();
+                    guide.output(std::cout);
             }
+            
+            Solution(const std::string& guide2Dfilename, const std::string& netfilename){
+                loadfile(guide2Dfilename);
+                mergefile(netfilename);
+            }
+
             void loadfile(const std::string& filename);
-            Solution(const std::string& filename){
-                loadfile(filename);
-            }
+            void mergefile(const std::string& filename);
+            void outputdebug(const std::string& filename) const;
     };
 }

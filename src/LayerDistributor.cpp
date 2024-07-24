@@ -54,7 +54,7 @@ void LayerDistributor::merge(){
 void LayerDistributor::outoutdebug() const{
     for(int i=0;i<db.netNum;i++){
         db.nets[i].output();
-        sl[i].output();
+        sl[i].output(std::cout);
         cin.get();
     }
 }

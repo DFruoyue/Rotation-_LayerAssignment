@@ -36,6 +36,11 @@ void Solution::loadfile(const string& filename){
         lines.emplace_back(istringstream(line));
         }//得到所有的path
 
+        if(lines.size() == 1){      //处理极品点
+            int x,y;
+            lines[0] >> x >> y;
+            guide.addVia(x, y);
+        }
         lines.pop_back();   //去掉多余的点
         int startx, starty, endx, endy;
 
@@ -115,6 +120,17 @@ void Solution::loadfile(const string& filename){
 
 bool Guide::targetPin(const Location& loc){
     int wireNum = wires.size();
+    if(wireNum == 0){
+        Via& via = vias[0];
+        if(via.getx() != loc.x || via.gety() != loc.y){
+            return false;
+        }else{
+            Pin& pin = pins.emplace_back(loc);
+            Clue pinClue = Clue(pins.size() - 1, PIN);
+            addNodetoVia(0, pinClue);
+            return true;
+        }
+    }
     bool Pinbuilt = false;
     Clue pinClue;
     for(int i=0;i<wireNum;i++){
@@ -139,7 +155,38 @@ bool Guide::targetPin(const Location& loc){
     return Pinbuilt;
 }
 
-const int Guide::Link(const Clue& nc1, const Clue& nc2){
+void Solution::mergefile(const string& filename){
+    const string redundant_chars = "(),[]";
+
+    Timer timer("合并guide2D.txt和net信息");
+    ifstream file(filename);
+    if(!file.is_open()){
+        cerr << "Error: Cannot open file " << filename << endl;
+        exit(1);
+    }
+
+    string line, name;
+    for(Guide& guide: guides){
+        if(!getline(file, name))  //第一行输入的是net的名字
+            break;
+        getline(file, line);      //读取掉'('
+
+        while(getline(file, line) && line != ")"){
+            line.erase(remove_if(line.begin(), line.end(), [&redundant_chars](char c) {
+                return redundant_chars.find(c) != string::npos;
+                }), line.end());
+            istringstream ss(line);
+            Location loc;
+            do{
+                ss >> loc.l >> loc.x >> loc.y;
+            }while(!guide.targetPin(loc));
+        }
+    }
+    file.close();
+    timer.output("合并guide2D.txt和net信息");
+}
+
+int Guide::Link(const Clue& nc1, const Clue& nc2){
     int ViaIdx = -1;
     Node& node1 = getNode(nc1);
     Node& node2 = getNode(nc2);
@@ -167,21 +214,32 @@ const int Guide::Link(const Clue& nc1, const Clue& nc2){
     return ViaIdx;
 }
 
-void Guide::output() const{
-    cout << "Guide: " << netname << endl;
+void Guide::output(ostream& os) const{
+    os << "Guide: " << netname << endl;
     const string my_blank = string(4, ' ');
-    cout << pins.size() << " Pins:\n";
+    os << pins.size() << " Pins:\n";
     for(const Pin& pin: pins){
-        cout << my_blank << pin.node.loc << std::endl;
+        os << my_blank << pin.node.loc << std::endl;
     }
-    cout << wires.size() << " Wires:\n";
+    os << wires.size() << " Wires:\n";
     for(const Wire& wire: wires){
-        cout << my_blank << wire.getEdge() << ' ' << wire.direction << endl;
+        os << my_blank << wire.getEdge() << ' ' << wire.direction << endl;
     }
-    cout << vias.size() << " Vias:\n";
+    os << vias.size() << " Vias:\n";
     for(auto& via: vias){
-        cout << my_blank << via.getEdge() << endl;
+        os << my_blank << via.getEdge() << endl;
     }
+}
+void Solution::outputdebug(const string& filename) const{
+    ofstream file(filename);
+    if(!file.is_open()){
+        cerr << "Error: Cannot open file " << filename << endl;
+        exit(1);
+    }
+    for(auto& guide: guides){
+        guide.output(file);
+    }
+    file.close();
 }
 
 void Guide::addNodetoVia(const int& ViaIdx, const Clue& NodeClue){
@@ -223,4 +281,8 @@ Node& Guide::getNode(const Clue& NodeClue){
         return wires[NodeClue.first].start;
     else
         return wires[NodeClue.first].end;
+}
+
+void Guide::addVia(const int& x, const int& y){
+    vias.emplace_back(x, y);
 }
