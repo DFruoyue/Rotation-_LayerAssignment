@@ -5,6 +5,7 @@
 #include <sstream>
 #include <queue>
 #include "timer.hpp"
+#include "global.h"
 using namespace XZA;
 using namespace std;
 
@@ -58,13 +59,13 @@ void Solution::loadfile(const string& filename){
             ss >> endx >> endy >> startx >> starty; //读取掉开头
 
             ss >> endx >> endy >> startx >> starty; //读取第一段
-            guide.wires.emplace_back(-1, startx, starty, -1, endx, endy);
+            guide.wires.emplace_back(0, startx, starty, 0, endx, endy);
             TailWireIdx = guide.wires.size() - 1;
 
             while(ss >> endx >> endy >> startx >> starty){//如果有后续Segment
                 //处理每一个segment
-                Node start(-1, startx, starty);
-                Node end(-1, endx, endy);
+                Node start(0, startx, starty);
+                Node end(0, endx, endy);
 
                 guide.wires.emplace_back(start, end);
                 int newWireIdx = guide.wires.size() - 1;
@@ -213,7 +214,7 @@ int Guide::Link(const Clue& nc1, const Clue& nc2){
         ViaIdx = node2.ViaIdx;
         addNodetoVia(ViaIdx, nc1);
 
-    }else{
+    }else{  //新建一个Via
         vias.emplace_back(node1.loc.x, node1.loc.y);
         ViaIdx = vias.size() - 1;
 
@@ -238,9 +239,10 @@ void Guide::output(ostream& os) const{
     for(const Wire& wire: wires){
         os << my_blank << wire.getEdge() << ' ' << wire.direction << endl;
     }
-    os << vias.size() << " Vias:\n";
+    os << ValidViaCount << " Valid Vias:\n";
     for(auto& via: vias){
-        os << my_blank << via.getEdge() << endl;
+        if(via.isValid)
+            os << my_blank << via.getEdge() << endl;
     }
 }
 void Solution::outputdebug(const string& filename) const{
@@ -262,17 +264,26 @@ void Guide::addNodetoVia(const int& ViaIdx, const Clue& NodeClue){
     }
 
     Via& via = vias[ViaIdx];
+    bool prevViaValid = via.isValid;
     Node& node = getNode(NodeClue);
 
     //对Via数据更新
     via.minLayer = std::min(via.minLayer, node.loc.l);
     via.maxLayer = std::max(via.maxLayer, node.loc.l);
+    via.isValid = via.minLayer < via.maxLayer;
+
     via.addNode(NodeClue);
+    if(!prevViaValid && via.isValid){
+        ValidViaCount ++;
+    }
+    else if(prevViaValid && !via.isValid){
+        ValidViaCount --;
+    }
 
     node.setVia(ViaIdx);
 }
 
-void Guide::setLayerofWire(const int& WireIdx, const int& l){
+void Guide::setLayerofWire(const int& WireIdx, const int& l){   //更改demand
     Wire& wire = wires[WireIdx];
     wire.start.loc.l = l;
     wire.end.loc.l = l;
@@ -280,6 +291,7 @@ void Guide::setLayerofWire(const int& WireIdx, const int& l){
     if(wire.start.linkVia){
         vias[wire.start.ViaIdx].minLayer = std::min(vias[wire.start.ViaIdx].minLayer, l);
         vias[wire.start.ViaIdx].maxLayer = std::max(vias[wire.start.ViaIdx].maxLayer, l);
+
     }
     if(wire.end.linkVia){
         vias[wire.end.ViaIdx].minLayer = std::min(vias[wire.end.ViaIdx].minLayer, l);
@@ -300,4 +312,9 @@ Node& Guide::getNode(const Clue& NodeClue){
 
 void Guide::addVia(const int& x, const int& y){
     vias.emplace_back(x, y);
+}
+
+void Solution::setLayerofWire(const int& guideIdx, const int& WireIdx, const int& layer){
+    //获取原先的区域
+
 }

@@ -4,19 +4,18 @@
 #include <iostream>
 #include <sstream>
 #include "timer.hpp"
+#include "global.h"
 using namespace std;
 
-XZA::Database::Database(const string& capfile, const string& netfile)
-:netNum(0),layerNum(0)
-{
+XZA::Database::Database(const string& capfile)
+:netNum(0),layerNum(0){
     Timer timer("初始化数据库");
-    load_data(capfile, netfile);
+    load_data(capfile);
     timer.output("初始化数据库");
 }
 
-void XZA::Database::load_data(const string& capfile, const string& netfile){
+void XZA::Database::load_data(const string& capfile){
     load_Routing_Resource_file(capfile);
-    load_Net_Information_file(netfile);
 }
 
 void XZA::Database::load_Routing_Resource_file(const string& filename){
@@ -50,7 +49,7 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
         for(int x = 0; x < xSize; x++)
             for(int y = 0; y < ySize; y++){
                 file >> capacity;
-                layers[l].conjection[x][y].set(0, capacity);
+                layers[l].conjection[x][y].setCapacity(capacity * UNIT_CAPACITY );
             }
     }
 
@@ -121,6 +120,7 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
 }
 */
 
+/*
 void XZA::Database::load_Net_Information_file(const string& filename){
     ifstream file(filename);
     string redundant_chars = "(),[]";
@@ -150,6 +150,8 @@ void XZA::Database::load_Net_Information_file(const string& filename){
     }
     file.close();
 }
+*/
+
 
 /*
 void XZA::Database::load_Guide2D_file(const string& filename){
@@ -177,11 +179,17 @@ void XZA::Database::load_Guide2D_file(const string& filename){
     }
     file.close();
 }
-
 */
+
+/*
 void XZA::Database::outputdebug() const{
     for(auto& net: nets){
         net.output();
         cin.get();
     }
+}
+*/
+
+double XZA::Database::changeCostofGcell(const int& l, const int& x, const int& y, int delta){
+    return layers[l].conjection[x][y].getChangeInfluence(delta) * layers[l].overFlowLayerWeight;
 }

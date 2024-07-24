@@ -33,7 +33,7 @@ namespace XZA{
             Node(const Node& node): loc(node.loc), linkVia(node.linkVia), ViaIdx(node.ViaIdx){}
             Node(const Location& loc, const bool& linkVia = false): loc(loc), linkVia(linkVia), ViaIdx(-1){}
             Node(const int& l, const int& x, const int& y, const bool& linkVia = false): loc(l, x, y), linkVia(linkVia), ViaIdx(-1){}
-            Node(): loc(-1, 0, 0), linkVia(false), ViaIdx(-1){}
+            Node():linkVia(false), ViaIdx(-1){}
 
             int ViaIdx;
 
@@ -47,6 +47,7 @@ namespace XZA{
         friend class Guide;
 
         private:
+            bool isValid = false;
             int maxLayer = -1;
             int minLayer = INFINITY;
             int x, y;
@@ -87,7 +88,22 @@ namespace XZA{
 
         public:
             Edge getEdge() const{
-                return Edge(start.loc, end.loc);
+                if(direction == HORIZONTAL){
+                    if (start.loc.x < end.loc.x)
+                        return Edge(start.loc, end.loc);
+                    else
+                        return Edge(end.loc, start.loc);
+                }
+                else if(direction == VERTICAL){
+                    if (start.loc.y < end.loc.y)
+                        return Edge(start.loc, end.loc);
+                    else
+                        return Edge(end.loc, start.loc);
+                }
+                else{
+                    std::cerr << "Error: Wire direction is undefined" << std::endl;
+                    exit(1);
+                }
             }
             Wire(const Node& start, const Node& end)
                 : start(start), end(end)
@@ -122,6 +138,7 @@ namespace XZA{
             Direction getDirection() const{return direction;}
             const Node& getStart()const{return start;}
             const Node& getEnd() const{return end;}
+            int getLayer() const{return start.loc.l;}
     };
 
     class Pin{
@@ -135,7 +152,6 @@ namespace XZA{
 
     };
 
-
     class Guide{
         friend class Solution;
         friend class LayerDistributor;
@@ -144,6 +160,7 @@ namespace XZA{
             std::vector<Via> vias;
             std::vector<Pin> pins;
             std::vector<Pin> Virtualpins;
+            int ValidViaCount = 0;
 
         public:
             std::string netname;
@@ -196,5 +213,6 @@ namespace XZA{
             void loadfile(const std::string& filename);
             void mergefile(const std::string& filename);
             void outputdebug(const std::string& filename) const;
+            void setLayerofWire(const int& guideIdx, const int& WireIdx, const int& layer);
     };
 }
