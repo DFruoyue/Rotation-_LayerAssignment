@@ -181,6 +181,15 @@ void Solution::mergefile(const string& filename){
                 ss >> loc.l >> loc.x >> loc.y;
             }while(!guide.targetPin(loc));
         }
+        if(guide.wires.size() == 0){
+            Via& via = guide.vias[0];
+            if(via.getminLayer() == via.getmaxLayer()){
+                //添加一个虚拟的Pin,使得这个via能够输出
+                guide.Virtualpins.emplace_back(via.getmaxLayer() + 1, via.getx(), via.gety());
+                Clue pinClue = Clue(guide.Virtualpins.size() - 1, VirtualPIN);
+                guide.addNodetoVia(0, pinClue);
+            }
+        }
     }
     file.close();
     timer.output("合并guide2D.txt和net信息");
@@ -219,6 +228,10 @@ void Guide::output(ostream& os) const{
     const string my_blank = string(4, ' ');
     os << pins.size() << " Pins:\n";
     for(const Pin& pin: pins){
+        os << my_blank << pin.node.loc << std::endl;
+    }
+    os << Virtualpins.size() << " Virtual Pins:\n";
+    for(const Pin& pin: Virtualpins){
         os << my_blank << pin.node.loc << std::endl;
     }
     os << wires.size() << " Wires:\n";
@@ -275,7 +288,9 @@ void Guide::setLayerofWire(const int& WireIdx, const int& l){
 }
 
 Node& Guide::getNode(const Clue& NodeClue){
-    if(NodeClue.second == PIN)
+    if(NodeClue.second == VirtualPIN)
+        return Virtualpins[NodeClue.first].node;
+    else if(NodeClue.second == PIN)
         return pins[NodeClue.first].node;
     else if(NodeClue.second == START)
         return wires[NodeClue.first].start;

@@ -8,7 +8,8 @@ namespace XZA{
     enum Forward{
         START,
         END,
-        PIN
+        PIN,
+        VirtualPIN,
     };
     using Clue = std::pair<int, Forward>;
     struct Edge{
@@ -142,6 +143,7 @@ namespace XZA{
             std::vector<Wire> wires;
             std::vector<Via> vias;
             std::vector<Pin> pins;
+            std::vector<Pin> Virtualpins;
 
         public:
             std::string netname;

@@ -33,23 +33,7 @@ void LayerDistributor::init(){
     timer.output("初始化LayerDistributor");
 }
 
-void LayerDistributor::merge(){
-    Timer timer("合并guide2D.txt和net信息");
-    for(int i=0;i<db.netNum;i++){
-        auto& net = db.nets[i];
-        auto& guide = sl[i];
-
-        for(auto& pinOptionalLocation : net.pinsOptionalLocations){
-            for(auto& loc : pinOptionalLocation){
-                if(guide.targetPin(loc)){
-                    net.pins.emplace_back(loc);
-                    break;
-                }
-            }
-        }
-    }
-    timer.output("合并guide2D.txt和net信息");
-}
+void LayerDistributor::merge(){}
 
 void LayerDistributor::outoutdebug() const{
     for(int i=0;i<db.netNum;i++){
