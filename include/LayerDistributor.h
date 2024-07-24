@@ -26,7 +26,7 @@ namespace XZA{
         double conjectionCostofEdgesChanged(const EdgesChanged& e) const;
 
         void initConjection();
-        void greedyAssgin();
+        void greedyAssign();
 
     public:
         LayerDistributor(Database& database, Solution& sl):
@@ -35,10 +35,11 @@ namespace XZA{
             Timer timer1("初始化conjection");
             initConjection();
             timer1.output("初始化conjection");
-            Timer timer2("贪心分配");
-            greedyAssgin();
-            timer2.output("贪心分配");
+            Timer timer2("层分配");
+            greedyAssign();
+            timer2.output("层分配");
         };
-        void outputdesign(const string& outfilename = "output.txt");
+        void outputdesign(const string& outfilename = "output.txt") const;
+        bool CheckViolation() const;
     };
 }

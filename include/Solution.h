@@ -48,8 +48,8 @@ namespace XZA{
 
         private:
             bool isValid = false;
-            int maxLayer = -1;
-            int minLayer = INFINITY;
+            int maxLayer = 0;
+            int minLayer = 0;
             int x, y;
             std::vector<Clue>   NodeClues;
             void addNode(const Clue& NodeClue){
@@ -164,6 +164,7 @@ namespace XZA{
             std::vector<Pin> pins;
             std::vector<Pin> Virtualpins;
             int ValidViaCount = 0;
+            void updateVia(const int& ViaIdx);
 
         public:
             std::string netname;
@@ -196,6 +197,7 @@ namespace XZA{
         friend class LayerDistributor;
         private:
             std::vector<Guide> guides;
+
         public:
             void reserve(const int& n){
                 guides.reserve(n);

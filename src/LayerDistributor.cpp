@@ -4,6 +4,7 @@
 #include <random>
 #include "global.h"
 #include "ProcessBar.h"
+#include "timer.hpp"
 using namespace XZA;
 
 int randomNum(int high, int low = 0){
@@ -13,10 +14,21 @@ int randomNum(int high, int low = 0){
     return distrib(gen);
 }
 
-void LayerDistributor::outputdesign(const string& outfilename){
-    Timer timer("写入结果");
-
-    timer.output("写入结果");
+void LayerDistributor::outputdesign(const string& outfilename) const{
+    ofstream file(outfilename);
+    for(const Guide& guide: sl.guides){
+        file << guide.netname << endl;
+        file << "(\n";
+        for(const Wire& wire: guide.wires){
+            file << wire.getEdge() << endl;
+        }
+        for(const Via& via: guide.vias){
+            if(via.valid())
+                file << via.getEdge() << endl;
+        }
+        file << ")\n";
+    }
+    file.close();
 }
 
 double LayerDistributor::costofChangeWireToLayer(const int& layer, const int& wireIdx, const int& guideIdx){
@@ -49,6 +61,7 @@ EdgesChanged LayerDistributor::setLayerofWirewillChangeEdges(const int& guideIdx
     sl.setLayerofWire(guideIdx, WireIdx, layer);
 
     e.emplace_back(prevWire.getEdge(), sl[guideIdx].getWire(WireIdx).getEdge(), prevWire.getDirection());
+
     if(prevWire.getStart().linkVia){
         const Via& nextVia1 = sl[guideIdx].getVia(prevWire.getStart().ViaIdx);
         if(prevVia1.getminLayer() != nextVia1.getminLayer()||prevVia1.getmaxLayer() != nextVia1.getmaxLayer())
@@ -184,7 +197,6 @@ double LayerDistributor::conjectionCostofEdgesChanged(const EdgesChanged& es) co
 }
 
 void LayerDistributor::initConjection(){
-
     for(const Guide& guide: sl.guides){
         for(const Wire& wire: guide.wires){
             const int& layer = wire.getLayer();
@@ -222,10 +234,9 @@ void LayerDistributor::initConjection(){
 
         }
     }
-    cout << endl;
 }
 
-void LayerDistributor::greedyAssgin(){
+void LayerDistributor::greedyAssign(){
     const int NetNum = sl.getNetNum();
     for(int guideIdx = 0; guideIdx < sl.guides.size(); guideIdx++){
         updateProgressBar(1.0 * (guideIdx + 1)/NetNum);
@@ -243,17 +254,33 @@ void LayerDistributor::greedyAssgin(){
                     continue;
                 if(db.getDirectionofLayer(layer) != wire.getDirection())
                     continue;
-
                 double cost = costofChangeWireToLayer(layer, wireIdx, guideIdx);
                 if(cost < minCost){
                     minCost = cost;
                     minLayer = layer;
                 }
             }
-
             if(minLayer != -1){
                 setLayerofWire(guideIdx, wireIdx, minLayer);
             }
         }
     }
+}
+
+bool LayerDistributor::CheckViolation()const{
+    Timer timer("检查布线结果");
+    for(const Guide& guide: sl.guides){
+        for(const Wire& wire: guide.wires){
+            const int& layer = wire.getLayer();
+            if(wire.getDirection() != db.getDirectionofLayer(layer)){
+                cerr << "错误:Wire的方向与所在层的方向不一致" << endl;
+                return true;
+            }else if(layer < 1 || layer >= db.layerNum){
+                cerr << "错误:Wire的层号不在范围内" << endl;
+                return true;
+            }
+        }
+    }
+    timer.output("检查布线结果");
+    return false;
 }

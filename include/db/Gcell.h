@@ -30,7 +30,7 @@ namespace XZA{
             return !(*this == other);
         }
         friend std::ostream& operator<<(std::ostream& os, const Location& loc){
-            return os << std::setw(5) << loc.l << " " << std::setw(5) << loc.x << " " << std::setw(5) <<  loc.y;
+            return os << loc.x << " " <<  loc.y << " " << loc.l;
         }
     };
     using PinOptionalLocations = std::vector<Location>;

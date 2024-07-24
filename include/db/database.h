@@ -16,9 +16,6 @@ namespace XZA{
         int ySize;
         double unitWLcost;
         int unitViacost;
-
-        vector<int> HorizantalLengths;
-        vector<int> VerticalLengths;
         
         vector<LayerInfo> layers;
 
@@ -38,6 +35,7 @@ namespace XZA{
             return layers[l].direction;
         }
         double changeCostofGcell(const int& l, const int& x, const int& y, int delta);
+        void StaticDemand() const;
     };
 
 }

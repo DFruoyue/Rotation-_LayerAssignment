@@ -10,9 +10,9 @@ using namespace std;
 
 XZA::Database::Database(const string& capfile)
 :layerNum(0){
-    Timer timer("初始化数据库");
+    Timer timer("导入.cap文件");
     load_data(capfile);
-    timer.output("初始化数据库");
+    timer.output("导入.cap文件");
 }
 
 void XZA::Database::load_data(const string& capfile){
@@ -21,45 +21,44 @@ void XZA::Database::load_data(const string& capfile){
 
 void XZA::Database::load_Routing_Resource_file(const string& filename){
     ifstream file(filename);
+    string line;
+    istringstream ss;
+    int lineCount = 0;
     if(!file.is_open()){
         cerr << "Error: Cannot open file " << filename << endl;
         exit(1);
     }
-    file >> layerNum >> xSize >> ySize >> unitWLcost >> unitViacost;
+    getline(file, line);    lineCount++;
+    ss = istringstream(line);
+    ss >> layerNum >> xSize >> ySize;
 
     layers.resize(layerNum);
-    for(int i = 0; i < layerNum; i++)
-        file >> layers[i].overFlowLayerWeight;
+    getline(file, line);    lineCount++;
+    ss = istringstream(line);
+    ss >> unitWLcost >> unitViacost;
+    for(int l = 0; l < layerNum; l++)
+        ss >>layers[l].overFlowLayerWeight;
 
-    HorizantalLengths.resize(xSize);
-    for(int i = 0; i < xSize; i++)
-        file >> HorizantalLengths[i];
+    getline(file, line);    lineCount++;
 
-    VerticalLengths.resize(ySize);
-    for(int i = 0; i < ySize; i++)
-        file >> VerticalLengths[i];
+    getline(file, line);    lineCount++;
     
     int dir;
     for(int l = 0; l < layerNum; l++){
-        file >> layers[l].name;
-        file >> dir;
+        getline(file, line);    lineCount++;
+        ss = istringstream(line);
+        ss >> layers[l].name >> dir;
         layers[l].direction = XZA::Direction(dir);
-        file >> layers[l].minlength;
+        ss >> layers[l].minlength;
+
         layers[l].conjection.resize(xSize, vector<Conjection>(ySize));
         int capacity;
-        if(dir == 0){
+        for(int y = 0; y < ySize; y++){
+            getline(file, line);    lineCount++;
+            ss = istringstream(line);
             for(int x = 0; x < xSize; x++){
-                for(int y = 0; y < ySize; y++){
-                    file >> capacity;
-                    layers[l].conjection[x][y].setCapacity(capacity * UNIT_CAPACITY );
-                }
-            }
-        }else{
-            for(int y = 0; y < ySize; y++){
-                for(int x = 0; x < xSize; x++){
-                    file >> capacity;
-                    layers[l].conjection[x][y].setCapacity(capacity * UNIT_CAPACITY );
-                }
+                ss >> capacity;
+                layers[l].conjection[x][y].setCapacity(capacity * UNIT_CAPACITY );
             }
         }
     }
@@ -203,4 +202,23 @@ void XZA::Database::outputdebug() const{
 
 double XZA::Database::changeCostofGcell(const int& l, const int& x, const int& y, int delta){
     return layers[l].conjection[x][y].getChangeInfluence(delta) * layers[l].overFlowLayerWeight;
+}
+
+void XZA::Database::StaticDemand() const{
+    vector<int> count(100);
+    int max = 0;
+    int min = 50;
+    for(int l = 0; l < layerNum; l++){
+        for(int x = 0; x < xSize; x++){
+            for(int y = 0; y < ySize; y++){
+                int i = layers[l].conjection[x][y].getDemand() - layers[l].conjection[x][y].getCapacity();
+                count[i + 50]++;
+                max = std::max(max, i);
+                min = std::min(min, i);
+            }
+        }
+    }
+    for(int i = min; i <= max; i++){
+        cout << fixed << setprecision(1) << setw(4) << 1.0*i/2 << setw(30) << " (demand - capacity) count: " << right << setw(11) <<  count[i+50] << endl;
+    }
 }

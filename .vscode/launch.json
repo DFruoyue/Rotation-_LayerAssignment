@@ -4,8 +4,8 @@
         {
             "type":"lldb",
             "request":"launch",
-            "name":"DebugInTest",
-            "program":"${workspaceFolder}/build/Test",
+            "name":"Debug",
+            "program":"${workspaceFolder}/build/LayerAssignment",
             "args":["--stack-size=1000000"],
             "cwd":"${workspaceFolder}",
             "terminal": "integrated"
@@ -13,9 +13,13 @@
         {
             "type":"lldb",
             "request":"launch",
-            "name":"DebugInObject",
-            "program":"${workspaceFolder}/build/LayerAssignment",
-            "args":["--stack-size=1000000"],
+            "name":"RunEvaluator",
+            "program":"${workspaceFolder}/build/Evaluator",
+            "args":[
+                "${workspaceFolder}/Data/nvdla.cap",
+                "${workspaceFolder}/Data/nvdla.net",
+                "${workspaceFolder}/output.txt"
+            ],
             "cwd":"${workspaceFolder}",
             "terminal": "integrated"
         }

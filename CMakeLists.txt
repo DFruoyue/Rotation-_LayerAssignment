@@ -9,10 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # 递归地自动包含src目录下所有的.cpp文件
 file(GLOB_RECURSE ObjectSources "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-list(REMOVE_ITEM ObjectSources "${CMAKE_CURRENT_SOURCE_DIR}/src/test.cpp")
-
-file(GLOB_RECURSE TestSources "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-list(REMOVE_ITEM TestSources "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
 # 添加头文件搜索路径
 include_directories(
@@ -24,4 +20,4 @@ include_directories(
 )
 # 添加可执行文件
 add_executable(LayerAssignment ${ObjectSources})
-add_executable(Test ${TestSources})
+add_executable(Evaluator "${CMAKE_CURRENT_SOURCE_DIR}/evaluator/evaluator.cpp")

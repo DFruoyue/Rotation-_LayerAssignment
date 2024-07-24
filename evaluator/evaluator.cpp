@@ -730,6 +730,8 @@ bool NVR_DB::check_connectivity(const NVR_Net *net,
       }
     }
     if(!connected) {
+      printf("net %s not connected\n", net->name().c_str());
+      std::cin.get();
       return false;
     }
   }

@@ -59,6 +59,8 @@ namespace XZA{
                         exit(0);
                 }
             }
+            const int& getDemand() const {return demand;}
+            const int& getCapacity() const {return capacity;}
     };
     struct LayerInfo{   //每一层的布线资源信息
         string name;
