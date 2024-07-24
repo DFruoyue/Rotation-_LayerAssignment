@@ -18,13 +18,19 @@ void LayerDistributor::outputdesign(const string& outfilename){
     timer.output("写入结果");
 }
 
-void LayerDistributor::merge(){}
-
-double LayerDistributor::costofaddWireinLayer(const int& layer, const int& wireIdx, Guide& guide){
-    double Wirecost = 0;
-    double Viacost = 0;
-
-    return Wirecost + Viacost;
+double LayerDistributor::costofChangeWireToLayer(const int& layer, const int& wireIdx, const int& guideIdx){
+    const EdgesChanged &es = setLayerofWirewillChangeEdges(guideIdx, wireIdx, layer);
+    double conjectionCost = conjectionCostofEdgesChanged(es);
+    double ValidViaCost = 0;
+    for(const EdgeChanged& e: es){
+        if(e.direction == VIA){
+            if(e.prevEdge.start.l == e.prevEdge.end.l && e.nextEdge.start.l < e.nextEdge.end.l)
+                ValidViaCost += db.unitViacost;
+            else if(e.prevEdge.start.l < e.prevEdge.end.l && e.nextEdge.start.l == e.nextEdge.end.l)
+                ValidViaCost -= db.unitViacost;
+        }
+    }
+    return conjectionCost + ValidViaCost;
 }
 
 EdgesChanged LayerDistributor::setLayerofWirewillChangeEdges(const int& guideIdx, const int& WireIdx, const int& layer){
@@ -132,7 +138,7 @@ void LayerDistributor::setLayerofWire(const int& guideIdx, const int& WireIdx, c
 
 }
 
-double LayerDistributor::costofEdgesChanged(const EdgesChanged& es) const{
+double LayerDistributor::conjectionCostofEdgesChanged(const EdgesChanged& es) const{
     double cost = 0;
     for(const EdgeChanged& e: es){
         switch(e.direction){
@@ -176,19 +182,7 @@ double LayerDistributor::costofEdgesChanged(const EdgesChanged& es) const{
     return cost;
 }
 
-void LayerDistributor::init(){
-    Timer timer("初始化demand需求");
-    for(Guide& guide: sl.guides){
-        for(Wire& wire: guide.wires){
-            //计算每一条wire添加的cost
-
-        }
-    }
-    timer.output("初始化LayerDistributor");
-}
-
 void LayerDistributor::initConjection(){
-    Timer timer("初始化conjection");
     for(const Guide& guide: sl.guides){
         for(const Wire& wire: guide.wires){
             const int& layer = wire.getLayer();
@@ -215,13 +209,45 @@ void LayerDistributor::initConjection(){
             }
         }
         for(const Via& via: guide.vias){
-            const int& x = via.getx();
-            const int& y = via.gety();
-            const int& lmin = via.getminLayer();
-            const int& lmax = via.getmaxLayer();
-            for(int l = lmin + 1; l <= lmax - 1; l++)
-                db.layers[l].conjection[x][y].increaseDemand(UNSTACKED_VIA_DEMAND);
+            if(via.valid()){
+                const int& x = via.getx();
+                const int& y = via.gety();
+                const int& lmin = via.getminLayer();
+                const int& lmax = via.getmaxLayer();
+                for(int l = lmin + 1; l <= lmax - 1; l++)
+                    db.layers[l].conjection[x][y].increaseDemand(UNSTACKED_VIA_DEMAND);
+            }
+
         }
     }
-    timer.output("初始化conjection");
+}
+
+void LayerDistributor::greedyAssgin(){
+    for(int guideIdx = 0; guideIdx < sl.guides.size(); guideIdx++){
+        Guide& guide = sl.guides[guideIdx];
+        for(int wireIdx = 0; wireIdx < guide.wires.size(); wireIdx++){
+            Wire& wire = guide.wires[wireIdx];
+
+            const int& prevLayer = wire.getLayer();
+            double minCost = INFINITY;
+
+            int minLayer = -1;
+
+            for(int layer = 1; layer < db.layerNum; layer++){
+                if(layer == prevLayer)
+                    continue;
+
+                double cost = costofChangeWireToLayer(layer, wireIdx, guideIdx);
+
+                if(cost < minCost){
+                    minCost = cost;
+                    minLayer = layer;
+                }
+            }
+            
+            if(minLayer != -1){
+                setLayerofWire(guideIdx, wireIdx, minLayer);
+            }
+        }
+    }
 }

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include "timer.hpp"
 
 namespace XZA{
     struct EdgeChanged{
@@ -19,20 +20,25 @@ namespace XZA{
     private:
         Database& db;
         Solution& sl;
+        double costofChangeWireToLayer(const int& layer, const int& wireIdx, const int& guideIdx);
+        EdgesChanged setLayerofWirewillChangeEdges(const int& guideIdx, const int& WireIdx, const int& layer);
+        void setLayerofWire(const int& guideIdx, const int& WireIdx, const int& layer);
+        double conjectionCostofEdgesChanged(const EdgesChanged& e) const;
 
-        void merge();   //将初始化的solution与net信息合并，得到pin的位置
-        void iterate();
         void initConjection();
+        void greedyAssgin();
+
     public:
         LayerDistributor(Database& database, Solution& sl):
             db(database),sl(sl){};
         void run(){
+            Timer timer1("初始化conjection");
+            initConjection();
+            timer1.output("初始化conjection");
+            Timer timer2("贪心分配");
+            greedyAssgin();
+            timer2.output("贪心分配");
         };
-        void init();
         void outputdesign(const string& outfilename = "output.txt");
-        double costofaddWireinLayer(const int& layer, const int& WireIdx, Guide& guide);
-        EdgesChanged setLayerofWirewillChangeEdges(const int& guideIdx, const int& WireIdx, const int& layer);
-        void setLayerofWire(const int& guideIdx, const int& WireIdx, const int& layer);
-        double costofEdgesChanged(const EdgesChanged& e) const;
     };
 }

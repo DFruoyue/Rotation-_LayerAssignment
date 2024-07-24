@@ -77,6 +77,9 @@ namespace XZA{
             const int& gety() const{
                 return y;
             }
+            const bool& valid() const{
+                return isValid;
+            }
     };
     
     class Wire{
