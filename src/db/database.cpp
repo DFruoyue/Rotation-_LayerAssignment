@@ -1,5 +1,6 @@
 #include "database.h"
 #include <vector>
+#include <string>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -8,7 +9,7 @@
 using namespace std;
 
 XZA::Database::Database(const string& capfile)
-:netNum(0),layerNum(0){
+:layerNum(0){
     Timer timer("初始化数据库");
     load_data(capfile);
     timer.output("初始化数据库");
@@ -24,33 +25,43 @@ void XZA::Database::load_Routing_Resource_file(const string& filename){
         cerr << "Error: Cannot open file " << filename << endl;
         exit(1);
     }
-
     file >> layerNum >> xSize >> ySize >> unitWLcost >> unitViacost;
 
     layers.resize(layerNum);
     for(int i = 0; i < layerNum; i++)
         file >> layers[i].overFlowLayerWeight;
 
-    HorizantalLengths.reserve(xSize);
+    HorizantalLengths.resize(xSize);
     for(int i = 0; i < xSize; i++)
         file >> HorizantalLengths[i];
 
-    VerticalLengths.reserve(ySize);
+    VerticalLengths.resize(ySize);
     for(int i = 0; i < ySize; i++)
         file >> VerticalLengths[i];
-
     
+    int dir;
     for(int l = 0; l < layerNum; l++){
         file >> layers[l].name;
-        int dir; file >> dir; layers[l].direction = (XZA::Direction)dir;
+        file >> dir;
+        layers[l].direction = XZA::Direction(dir);
         file >> layers[l].minlength;
         layers[l].conjection.resize(xSize, vector<Conjection>(ySize));
         int capacity;
-        for(int x = 0; x < xSize; x++)
-            for(int y = 0; y < ySize; y++){
-                file >> capacity;
-                layers[l].conjection[x][y].setCapacity(capacity * UNIT_CAPACITY );
+        if(dir == 0){
+            for(int x = 0; x < xSize; x++){
+                for(int y = 0; y < ySize; y++){
+                    file >> capacity;
+                    layers[l].conjection[x][y].setCapacity(capacity * UNIT_CAPACITY );
+                }
             }
+        }else{
+            for(int y = 0; y < ySize; y++){
+                for(int x = 0; x < xSize; x++){
+                    file >> capacity;
+                    layers[l].conjection[x][y].setCapacity(capacity * UNIT_CAPACITY );
+                }
+            }
+        }
     }
 
     file.close();
@@ -91,11 +102,11 @@ void XZA::Database::load_Net_and_guide2D_file(const string& netfilename, const s
             netline.erase(remove_if(netline.begin(), netline.end(), [&redundant_chars1](char c) {
                 return redundant_chars1.find(c) != string::npos;
                 }), netline.end());
-            istringstream ss(netline);
+            istringstream file(netline);
             std::pair<PinOptionalLocations, int>& OptionalLocations_of_pin = OptionalLocations_of_pins.emplace_back();
             OptionalLocations_of_pin.second = pinIdx;
             Location loc;
-            while(ss >> loc.l >> loc.x >> loc.y)
+            while(file >> loc.l >> loc.x >> loc.y)
                 OptionalLocations_of_pin.first.emplace_back(loc);
             pinIdx ++;
         }
@@ -141,10 +152,10 @@ void XZA::Database::load_Net_Information_file(const string& filename){
             line.erase(remove_if(line.begin(), line.end(), [&redundant_chars](char c) {
                 return redundant_chars.find(c) != string::npos;
                 }), line.end());
-            istringstream ss(line);
+            istringstream file(line);
             PinOptionalLocations& pin = nets.back().pinsOptionalLocations.emplace_back();
             Location loc;
-            while(ss >> loc.l >> loc.x >> loc.y)
+            while(file >> loc.l >> loc.x >> loc.y)
                 pin.emplace_back(loc);
         }
     }
@@ -169,11 +180,11 @@ void XZA::Database::load_Guide2D_file(const string& filename){
             line.erase(remove_if(line.begin(), line.end(), [&redundant_chars](char c) {
                 return redundant_chars.find(c) != string::npos;
                 }), line.end());
-            istringstream ss(line);
+            istringstream file(line);
             Path& path = net.guide2D.emplace_back();
-            ss >> path.start.x >> path.start.y >> path.end.x >> path.end.y;
+            file >> path.start.x >> path.start.y >> path.end.x >> path.end.y;
             Segment seg;
-            while(ss >> seg.start.x >> seg.start.y >> seg.end.x >> seg.end.y)
+            while(file >> seg.start.x >> seg.start.y >> seg.end.x >> seg.end.y)
                 net.guide2D.back().segments.emplace_back(seg);
         }
     }

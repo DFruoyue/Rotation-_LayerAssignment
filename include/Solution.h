@@ -212,7 +212,9 @@ namespace XZA{
                 loadfile(guide2Dfilename);
                 mergefile(netfilename);
             }
-
+            int getNetNum() const{
+                return guides.size();
+            }
             void loadfile(const std::string& filename);
             void mergefile(const std::string& filename);
             void outputdebug(const std::string& filename) const;

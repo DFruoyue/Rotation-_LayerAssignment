@@ -3,6 +3,7 @@
 #include "timer.hpp"
 #include <random>
 #include "global.h"
+#include "ProcessBar.h"
 using namespace XZA;
 
 int randomNum(int high, int low = 0){
@@ -183,6 +184,7 @@ double LayerDistributor::conjectionCostofEdgesChanged(const EdgesChanged& es) co
 }
 
 void LayerDistributor::initConjection(){
+
     for(const Guide& guide: sl.guides){
         for(const Wire& wire: guide.wires){
             const int& layer = wire.getLayer();
@@ -220,10 +222,13 @@ void LayerDistributor::initConjection(){
 
         }
     }
+    cout << endl;
 }
 
 void LayerDistributor::greedyAssgin(){
+    const int NetNum = sl.getNetNum();
     for(int guideIdx = 0; guideIdx < sl.guides.size(); guideIdx++){
+        updateProgressBar(1.0 * (guideIdx + 1)/NetNum);
         Guide& guide = sl.guides[guideIdx];
         for(int wireIdx = 0; wireIdx < guide.wires.size(); wireIdx++){
             Wire& wire = guide.wires[wireIdx];
@@ -236,15 +241,16 @@ void LayerDistributor::greedyAssgin(){
             for(int layer = 1; layer < db.layerNum; layer++){
                 if(layer == prevLayer)
                     continue;
+                if(db.getDirectionofLayer(layer) != wire.getDirection())
+                    continue;
 
                 double cost = costofChangeWireToLayer(layer, wireIdx, guideIdx);
-
                 if(cost < minCost){
                     minCost = cost;
                     minLayer = layer;
                 }
             }
-            
+
             if(minLayer != -1){
                 setLayerofWire(guideIdx, wireIdx, minLayer);
             }

@@ -10,7 +10,6 @@ namespace XZA{
     class Database{
     private:
         // Routing Resource
-        int netNum;
         int layerNum;
 
         int xSize;
@@ -35,8 +34,6 @@ namespace XZA{
 //        void outputdebug() const;
 
         friend class LayerDistributor;
-        const int getnetNum() const {return netNum;}
-
         Direction getDirectionofLayer(const int& l) const {
             return layers[l].direction;
         }
