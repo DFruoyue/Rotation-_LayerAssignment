@@ -2,7 +2,6 @@
 #include <vector>
 #include "Gcell.h"
 #include "Information.h"
-#include "Gcellcost.h"
 #include <iostream>
 #include <fstream>
 using namespace std;
@@ -10,12 +9,11 @@ namespace XZA{
     class Database{
     private:
         // Routing Resource
-        int layerNum;
 
         int xSize;
         int ySize;
-        double unitWLcost;
         int unitViacost;
+        int layerNum;
         
         vector<LayerInfo> layers;
 
@@ -31,11 +29,11 @@ namespace XZA{
 //        void outputdebug() const;
 
         friend class LayerDistributor;
-        Direction getDirectionofLayer(const int& l) const {
-            return layers[l].direction;
-        }
+        Direction getDirectionofLayer(const int& l) const {return layers[l].getDirection();}
         double changeCostofGcell(const int& l, const int& x, const int& y, int delta);
         void StaticDemand() const;
+        void increaseDemand(const int& l, const int& x, const int& y, const int& positive_delta);
+        void decreaseDemand(const int& l, const int& x, const int& y, const int& positive_delta);
     };
 
 }

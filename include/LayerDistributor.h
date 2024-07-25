@@ -20,23 +20,25 @@ namespace XZA{
     private:
         Database& db;
         Solution& sl;
-        double costofChangeWireToLayer(const int& layer, const int& wireIdx, const int& guideIdx);
+        double CostofChangeWireToLayer(const int& layer, const int& wireIdx, const int& guideIdx);
         EdgesChanged setLayerofWirewillChangeEdges(const int& guideIdx, const int& WireIdx, const int& layer);
-        void setLayerofWire(const int& guideIdx, const int& WireIdx, const int& layer);
+        void setWireToLayer(const int& guideIdx, const int& WireIdx, const int& layer);
         double conjectionCostofEdgesChanged(const EdgesChanged& e) const;
 
-        void initConjection();
-        void greedyAssign();
+        void Assign();
+        void updateDemand(const Wire& prevWire, const Wire& nextWire, const std::shared_ptr<Via> prevVia1 = nullptr, const Via* nextVia1 = nullptr, const std::shared_ptr<Via> prevVia2 = nullptr, const Via* nextVia2 = nullptr);
+        void updateDemandofWire(const Wire& prevWire, const Wire& nextWire);
+        void updateDemandofVia(const Via& prevVia, const Via& nextVia);
+        void AssignNetGreedy(const int& netIdx);
+        double CostofchangedWire(const Wire& prevWire, const Wire& nextWire) const;
+        double CostofchangedVia(const Via& prevVia, const Via& nextVia) const;
 
     public:
         LayerDistributor(Database& database, Solution& sl):
             db(database),sl(sl){};
         void run(){
-            Timer timer1("初始化conjection");
-            initConjection();
-            timer1.output("初始化conjection");
             Timer timer2("层分配");
-            greedyAssign();
+            Assign();
             timer2.output("层分配");
         };
         void outputdesign(const string& outfilename = "output.txt") const;

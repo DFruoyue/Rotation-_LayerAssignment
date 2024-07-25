@@ -2,7 +2,6 @@
 
 #include "Gcell.h"
 #include "Solution.h"
-#include "Gcellcost.h"
 #include "Cost.h"
 #include <string>
 #include <vector>
@@ -16,77 +15,69 @@ namespace XZA{
         private:
             int capacity = 0;
             int demand = 0;
-            double state = 0;
-            GcellCost changeInfluence;
-            void updateChangeInfluence(const double& nowState){
-                changeInfluence.increase1Cost = calculateCongestionState(demand + 1, capacity) - nowState;
-                changeInfluence.increase2Cost = calculateCongestionState(demand + 2, capacity) - nowState;
-                changeInfluence.decrease1Cost = nowState - calculateCongestionState(demand - 1, capacity);
-                changeInfluence.decrease2Cost = nowState - calculateCongestionState(demand - 2, capacity);
-            }
+            double overflow = 0;
+            float overflowslope = 0;
         public:
             Conjection(){}
             void setCapacity(const int& capacity){
                 this -> capacity = capacity;
-                state = calculateCongestionState(0, capacity);
-                updateChangeInfluence(state);
+                if(capacity)
+                    overflowslope = 0.5;
+                else
+                    overflowslope = 1.5;
+                overflow = calculateOverflowLoss(0, capacity);
             }
-
-            double getState() const {return state;}
-
-            void increaseDemand(const int& demand){
-                this -> demand += demand;
-                state = calculateCongestionState(this -> demand, capacity);
-                updateChangeInfluence(state);
+            void increaseDemand(const int& positive_delta){
+                this -> demand += positive_delta;
+                overflow = calculateOverflowLoss(this -> demand, capacity);
             }
-            void decreaseDemand(const int& demand){
-                this -> demand -= demand;
-                state = calculateCongestionState(this -> demand, capacity);
-                updateChangeInfluence(state);
-            }
-            double getChangeInfluence(const int& delta) const{
-                switch(delta){
-                    case 1:
-                        return changeInfluence.increase1Cost;
-                    case -1:
-                        return changeInfluence.decrease1Cost;
-                    case 2:
-                        return changeInfluence.increase2Cost;
-                    case -2:
-                        return changeInfluence.decrease2Cost;
-                    default:
-                        cerr << "错误访问:delat = " << delta << endl;
-                        exit(0);
-                }
+            void decreaseDemand(const int& positive_delta){
+                this -> demand -= positive_delta;
+                overflow = calculateOverflowLoss(this -> demand, capacity);
             }
             const int& getDemand() const {return demand;}
             const int& getCapacity() const {return capacity;}
+            int getDemandMinusCapacity() const {return demand - capacity;}
+            const double& getOverflow() const {return overflow;}
+            const float& getOverflowSlope() const {return overflowslope;}
     };
-    struct LayerInfo{   //每一层的布线资源信息
-        string name;
-        Direction direction;
-        int minlength;
-        vector<vector<Conjection>> conjection;
-        int overFlowLayerWeight;
-    };
+    class LayerInfo{   //每一层的布线资源信息
+        friend class Database;
+        private:
+            string name;
+            Direction direction = Direction::UNDEFINED;
+            vector<vector<Conjection>> conjection;
+            int overFlowLayerWeight;
 
-    struct NetInfo{
-        const char* BLUE = "\033[34m";
-        const char* RESET = "\033[0m";
-        string name;
-        int pinNum;
-        vector<Location> pins;
-        vector<PinOptionalLocations> pinsOptionalLocations;
+            //对LayerInfo的操作
+            void setDirection(const Direction& direction){this -> direction = direction;}
+            void setName(const string& name){this -> name = name;}
+            void setOverFlowLayerWeight(const int& overFlowLayerWeight){this -> overFlowLayerWeight = overFlowLayerWeight;}
+            void resize(const int& xsize, const int& ysize){conjection.resize(xsize, std::vector<Conjection>(ysize));}
 
-        NetInfo(const string& name = ""): name(name), pinNum(0){}
-        void output() const{
-            cout << "Net: " << name << " pins: " << endl;
-            int i = 1;
-            for(const auto& pin : pins){
-                cout << i << '.' << "(" << pin.l << ", " << pin.x << ", " << pin.y << ") ";
-                cout << endl;
-                i++;
+            //对conjection的操作
+            void setDemand(const int& x, const int& y, const int& demand){conjection[x][y].setCapacity(demand);}
+            void setCapacity(const int& x, const int& y, const int& capacity){conjection[x][y].setCapacity(capacity);}
+            void increaseDemand(const int& x, const int& y, const int& positive_delta){conjection[x][y].increaseDemand(positive_delta);}
+            void decreaseDemand(const int& x, const int& y, const int& positive_delta){conjection[x][y].decreaseDemand(positive_delta);}
+
+        public:
+            LayerInfo(){}
+            double getOverflowWeight() const {return overFlowLayerWeight;}
+            double CostofChangeDemand(const int& x, const int& y, const int& delta_demand) const{
+                const Conjection& c = conjection[x][y];
+                double newOverflow = calculateOverflowLoss(c.getDemandMinusCapacity() + delta_demand, c.getOverflowSlope());
+                return overFlowLayerWeight*(newOverflow - c.getOverflow());
             }
-        }
+
+            //获取LayerInfo的信息
+            const Direction& getDirection() const{return direction;}
+            const string& getName() const{return name;}
+
+            //获取conjection的信息
+            const int& getDemand(const int& x, const int& y) const{return conjection[x][y].getDemand();}
+            const int& getCapacity(const int& x, const int& y) const{return conjection[x][y].getCapacity();}
+            const int getDemandMinusCapacity(const int& x, const int& y) const{return conjection[x][y].getDemandMinusCapacity();}
+            const double& getOverflow(const int& x, const int& y) const{return conjection[x][y].getOverflow();}
     };
 }

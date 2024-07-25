@@ -41,7 +41,9 @@ void Solution::loadfile(const string& filename){
             int x,y;
             lines[0] >> x >> y;
             guide.addVia(x, y);
+            continue;
         }
+        
         lines.pop_back();   //去掉多余的点
         int startx, starty, endx, endy;
 
@@ -49,8 +51,6 @@ void Solution::loadfile(const string& filename){
         int count = 0;
         int TailWireIdx = -1;
         int HeadWireIdx = -1;
-        Wire* pHeadWire = nullptr;
-        Wire* pTailWire = nullptr;
         for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
             count ++;  
             //每次处理一条path, 从后往前处理
@@ -59,36 +59,33 @@ void Solution::loadfile(const string& filename){
             ss >> endx >> endy >> startx >> starty; //读取掉开头
 
             ss >> endx >> endy >> startx >> starty; //读取第一段
-            guide.wires.emplace_back(0, startx, starty, 0, endx, endy);
+            guide.wires.emplace_back(BLANKLAYER, std::move(startx), std::move(starty), std::move(endx), std::move(endy));
             TailWireIdx = guide.wires.size() - 1;
 
             while(ss >> endx >> endy >> startx >> starty){//如果有后续Segment
                 //处理每一个segment
-                Node start(1, startx, starty);
-                Node end(1, endx, endy);
-
-                guide.wires.emplace_back(start, end);
+                Location2D start = Location2D(std::move(startx), std::move(starty));
+                Location2D end = Location2D(std::move(endx), std::move(endy));
+                guide.wires.emplace_back(std::move(start), std::move(end), BLANKLAYER);
                 int newWireIdx = guide.wires.size() - 1;
                 //将新加的segment的end和上一个segment的start连接
-                guide.Link(Clue(newWireIdx, END), Clue(newWireIdx-1, START));
+                guide.Link(Clue(newWireIdx, WIRE_END), Clue(newWireIdx-1, WIRE_START));
             }
 
             HeadWireIdx = guide.wires.size() - 1;
 
             //对vector内容取指针后操作需要确保vector不会resize
             Wire& HeadWire = guide.wires[HeadWireIdx];
-            pTailWire = & guide.wires[TailWireIdx];
 
             if(count == 1){
                 //处理第一条path,queue初始化
-                q.push(Clue(HeadWireIdx, START));
-                q.push(Clue(TailWireIdx, END));
+                q.push(Clue(HeadWireIdx, WIRE_START));
+                q.push(Clue(TailWireIdx, WIRE_END));
             }else{
                 while(!q.empty()){
                     Clue clue = q.front();
-                    Node& node = guide.getNode(clue);
-                    if(node.loc.x != HeadWire.getStart().loc.x 
-                    || node.loc.y != HeadWire.getStart().loc.y){
+                    const Location2D& loc2D = guide.getLocation2D(clue);
+                    if(loc2D != HeadWire.getStart()){
                         q.pop();
                     }else{
                         break;
@@ -100,15 +97,13 @@ void Solution::loadfile(const string& filename){
                 }
 
                 //将开头的Node添加Via
-                guide.Link(q.front(), Clue(HeadWireIdx, START));
+                guide.Link(q.front(), Clue(HeadWireIdx, WIRE_START));
 
                 //将末尾的Node添加至queue
-                q.push(Clue(TailWireIdx, END));
+                q.push(Clue(TailWireIdx, WIRE_END));
             }
             TailWireIdx = -1;
             HeadWireIdx = -1;
-            pHeadWire = nullptr;
-            pTailWire = nullptr;
         }
 
         //释放queue
@@ -123,10 +118,10 @@ bool Guide::targetPin(const Location& loc){
     int wireNum = wires.size();
     if(wireNum == 0){
         Via& via = vias[0];
-        if(via.getx() != loc.x || via.gety() != loc.y){
+        if(via.getLocation2D() != Location2D(loc)){
             return false;
         }else{
-            Pin& pin = pins.emplace_back(loc);
+            Pin& pin = pins.emplace_back(std::move(loc));
             Clue pinClue = Clue(pins.size() - 1, PIN);
             addNodetoVia(0, pinClue);
             return true;
@@ -136,21 +131,21 @@ bool Guide::targetPin(const Location& loc){
     Clue pinClue;
     for(int i=0;i<wireNum;i++){
         Wire& wire = wires[i];
-        if(wire.start.loc.x == loc.x && wire.start.loc.y == loc.y){
+        if(wire.start  == Location2D(loc)){
             if(!Pinbuilt){
-                Pin& pin = pins.emplace_back(loc);
+                Pin& pin = pins.emplace_back(std::move(loc));
                 pinClue = Clue(pins.size() - 1, PIN);
                 Pinbuilt = true;
             }
-            Link(Clue(i, START), pinClue);
+            Link(Clue(i, WIRE_START), pinClue);
         }
-        if(wire.end.loc.x == loc.x && wire.end.loc.y == loc.y){
+        if(wire.end  == Location2D(loc)){
             if(!Pinbuilt){
-                Pin& pin = pins.emplace_back(loc);
+                Pin& pin = pins.emplace_back(std::move(loc));
                 pinClue = Clue(pins.size() - 1, PIN);
                 Pinbuilt = true;
             }
-            Link(Clue(i, END), pinClue);
+            Link(Clue(i, WIRE_END), pinClue);
         }
     }
     return Pinbuilt;
@@ -182,9 +177,9 @@ void Solution::mergefile(const string& filename){
                 ss >> loc.l >> loc.x >> loc.y;
             }while(!guide.targetPin(loc));
         }
-        if(guide.wires.size() == 0 && !guide.vias[0].valid()){
+        if(guide.wires.size() == 0 && !guide.vias[0].isValid()){
             //添加一个虚拟的Pin,使得这个via能够输出
-            guide.Virtualpins.emplace_back(guide.vias[0].getmaxLayer() + 1, guide.vias[0].getx(), guide.vias[0].gety());
+            guide.Virtualpins.emplace_back(guide.vias[0].getmaxLayer() + 1, guide.vias[0].getLocation2D());
             Clue pinClue = Clue(guide.Virtualpins.size() - 1, VirtualPIN);
             guide.addNodetoVia(0, pinClue);
         }
@@ -194,32 +189,66 @@ void Solution::mergefile(const string& filename){
     timer.output("合并guide2D.txt和net信息");
 }
 
-int Guide::Link(const Clue& nc1, const Clue& nc2){
-    int ViaIdx = -1;
-    Node& node1 = getNode(nc1);
-    Node& node2 = getNode(nc2);
-
-    if(node1.linkVia && node2.linkVia){
-        return node1.ViaIdx;
+const int& Guide::Link(const Clue& nc1, const Clue& nc2){
+    bool *plinkVia1 = nullptr, *plinkVia2 = nullptr;
+    int *pViaIdx1 = nullptr, *pViaIdx2 = nullptr;
+    switch(nc1.second){
+        case WIRE_START:
+            plinkVia1 = &wires[nc1.first].startLinkVia;
+            pViaIdx1 = &wires[nc1.first].startViaIdx;
+            break;
+        case WIRE_END:
+            plinkVia1 = &wires[nc1.first].endLinkVia;
+            pViaIdx1 = &wires[nc1.first].endViaIdx;
+            break;
+        case PIN:
+            plinkVia1 = &pins[nc1.first].linkVia;
+            pViaIdx1 = &pins[nc1.first].ViaIdx;
+            break;
+        case VirtualPIN:
+            plinkVia1 = &Virtualpins[nc1.first].linkVia;
+            pViaIdx1 = &Virtualpins[nc1.first].ViaIdx;
+            break;
+    }
+    switch(nc2.second){
+        case WIRE_START:
+            plinkVia2 = &wires[nc2.first].startLinkVia;
+            pViaIdx2 = &wires[nc2.first].startViaIdx;
+            break;
+        case WIRE_END:
+            plinkVia2 = &wires[nc2.first].endLinkVia;
+            pViaIdx2 = &wires[nc2.first].endViaIdx;
+            break;
+        case PIN:
+            plinkVia2 = &pins[nc2.first].linkVia;
+            pViaIdx2 = &pins[nc2.first].ViaIdx;
+            break;
+        case VirtualPIN:
+            plinkVia2 = &Virtualpins[nc2.first].linkVia;
+            pViaIdx2 = &Virtualpins[nc2.first].ViaIdx;
+            break;
     }
 
-    if(node1.linkVia){
-        ViaIdx = node1.ViaIdx;
-        addNodetoVia(ViaIdx, nc2);
-
+    if( *plinkVia1 && *plinkVia2){
+        return *pViaIdx1;
     }
-    else if(node2.linkVia){
-        ViaIdx = node2.ViaIdx;
-        addNodetoVia(ViaIdx, nc1);
+
+    const Location2D& loc = getLocation2D(nc1);
+
+    if(*plinkVia1){
+        *pViaIdx2 = *pViaIdx1;
+        addNodetoVia(*pViaIdx1, nc2);
+    }
+    else if(*plinkVia2){
+        *pViaIdx1 = *pViaIdx2;
+        addNodetoVia(*pViaIdx1, nc1);
 
     }else{  //新建一个Via
-        vias.emplace_back(node1.loc.x, node1.loc.y);
-        ViaIdx = vias.size() - 1;
-
-        addNodetoVia(ViaIdx, nc1);
-        addNodetoVia(ViaIdx, nc2);
+        vias.emplace_back(loc);
+        addNodetoVia(vias.size()-1, nc1);
+        addNodetoVia(vias.size()-1, nc2);
     }
-    return ViaIdx;
+    return *pViaIdx1;
 }
 
 void Guide::output(ostream& os) const{
@@ -227,11 +256,11 @@ void Guide::output(ostream& os) const{
     const string my_blank = string(4, ' ');
     os << pins.size() << " Pins:\n";
     for(const Pin& pin: pins){
-        os << my_blank << pin.node.loc << std::endl;
+        os << my_blank << pin << std::endl;
     }
     os << Virtualpins.size() << " Virtual Pins:\n";
     for(const Pin& pin: Virtualpins){
-        os << my_blank << pin.node.loc << std::endl;
+        os << my_blank << pin << std::endl;
     }
     os << wires.size() << " Wires:\n";
     for(const Wire& wire: wires){
@@ -240,13 +269,13 @@ void Guide::output(ostream& os) const{
 
     os << ValidViaCount << " Valid Vias:\n";
     for(auto& via: vias){
-        if(via.isValid)
+        if(via.isValid())
             os << my_blank << via.getEdge() << endl;
     }
 
     os << " Invalid Vias:\n";
     for(auto& via: vias){
-        if(!via.isValid)
+        if(!via.isValid())
             os << my_blank << via.getEdge() << endl;
     }
 }
@@ -263,67 +292,121 @@ void Solution::outputdebug(const string& filename) const{
 }
 
 void Guide::addNodetoVia(const int& ViaIdx, const Clue& NodeClue){
-    if(ViaIdx >= vias.size()){
-        cerr << "Error: ViaIdx out of range" << endl;
+    if(ViaIdx >= vias.size() || ViaIdx < 0){
+        cerr << "Error: ViaIdx out of range: ViaIdx = " << ViaIdx << ", size of vias = " << vias.size() << endl;
         exit(1);
     }
 
     Via& via = vias[ViaIdx];
-    bool prevViaValid = via.isValid;
-    Node& node = getNode(NodeClue);
+
+    switch(NodeClue.second){
+        case VirtualPIN:
+            Virtualpins[NodeClue.first].ViaIdx = ViaIdx;
+            Virtualpins[NodeClue.first].linkVia = true;
+            break;
+        case PIN:
+            pins[NodeClue.first].ViaIdx = ViaIdx;
+            pins[NodeClue.first].linkVia = true;
+            break;
+        case WIRE_START:
+            wires[NodeClue.first].startViaIdx = ViaIdx;
+            wires[NodeClue.first].startLinkVia = true;
+            break;
+        case WIRE_END:
+            wires[NodeClue.first].endViaIdx = ViaIdx;
+            wires[NodeClue.first].endLinkVia = true;
+            break;
+        default:
+            cerr << "Error: NodeClue type error" << endl;
+            exit(1);
+    }
 
     via.addNode(NodeClue);
-    node.setVia(ViaIdx);
+
     //对Via数据更新
     updateVia(ViaIdx);
 }
 
-void Guide::setLayerofWire(const int& WireIdx, const int& l){   //更改demand
+const Location2D& Guide::getLocation2D(const Clue& NodeClue) const{
+   try{
+        switch(NodeClue.second){
+            case VirtualPIN:
+                return Virtualpins.at(NodeClue.first).loc2D;
+            case PIN:
+                return pins.at(NodeClue.first).loc2D;
+            case WIRE_START:
+                return wires.at(NodeClue.first).start;
+            case WIRE_END:
+                return wires.at(NodeClue.first).end;
+            default:
+                cerr << "Error: NodeClue type error" << endl;
+                exit(1);
+        }
+    }
+    catch(const std::out_of_range& e){
+        cerr << "Error: Out of range! " << e.what() << endl;
+        exit(1);
+    }
+}
+
+const int& Guide::getNodeLayer(const Clue& NodeClue)const {
+    try{
+        switch(NodeClue.second){
+            case VirtualPIN:
+                return Virtualpins.at(NodeClue.first).layer;
+            case PIN:
+                return pins.at(NodeClue.first).layer;
+            case WIRE_START:
+            case WIRE_END:
+                return wires.at(NodeClue.first).layer;
+            default:
+                cerr << "Error: NodeClue type error" << endl;
+                exit(1);
+        }
+    }
+    catch(const std::out_of_range& e){
+        cerr << "Error: Out of range! " << e.what() << endl;
+        exit(1);
+    }
+}
+
+void Guide::addVia(const int& x, const int& y){vias.emplace_back(x, y);}
+
+void Guide::setLayerofWire(const int& WireIdx, const int& l){
     Wire& wire = wires[WireIdx];
-    wire.start.loc.l = l;
-    wire.end.loc.l = l;
+    wire.setLayer(l);
 
-    if(wire.start.linkVia)
-        updateVia(wire.start.ViaIdx);
-    if(wire.end.linkVia)
-        updateVia(wire.end.ViaIdx);
+    if(wire.startLinkVia)
+        updateVia(wire.startViaIdx);
+    if(wire.endLinkVia)
+        updateVia(wire.endViaIdx);
 }
-
-Node& Guide::getNode(const Clue& NodeClue){
-    if(NodeClue.second == VirtualPIN)
-        return Virtualpins[NodeClue.first].node;
-    else if(NodeClue.second == PIN)
-        return pins[NodeClue.first].node;
-    else if(NodeClue.second == START)
-        return wires[NodeClue.first].start;
-    else
-        return wires[NodeClue.first].end;
-}
-
-void Guide::addVia(const int& x, const int& y){
-    vias.emplace_back(x, y);
-}
-
 void Solution::setLayerofWire(const int& guideIdx, const int& WireIdx, const int& layer){
     //获取原先的区域
     guides[guideIdx].setLayerofWire(WireIdx, layer);
 }
 
 void Guide::updateVia(const int& ViaIdx){
-    bool prevViaValid = vias[ViaIdx].isValid;
+    bool prevViaValid = vias[ViaIdx].isValid();
     Via &via = vias[ViaIdx];
     via.minLayer = INFINITY;
     via.maxLayer = 0;
+    bool allset = true;
     for(const Clue& nodeClue: via.NodeClues){
-        Node& node = getNode(nodeClue);
-        via.minLayer = std::min(via.minLayer, node.loc.l);
-        via.maxLayer = std::max(via.maxLayer, node.loc.l);
+        int NodeLayer = getNodeLayer(nodeClue);
+        via.minLayer = std::min(via.minLayer, NodeLayer);
+        via.maxLayer = std::max(via.maxLayer, NodeLayer);
+        if(NodeLayer == BLANKLAYER)
+            allset = false;
     }
-    via.isValid = via.minLayer < via.maxLayer;
-    if(!prevViaValid && via.isValid){
+
+    via.settled = std::move(allset);
+
+    via.valid = via.minLayer < via.maxLayer;
+    if(!prevViaValid && via.isValid()){
         ValidViaCount ++;
     }
-    else if(prevViaValid && !via.isValid){
+    else if(prevViaValid && !via.isValid()){
         ValidViaCount --;
     }
 }

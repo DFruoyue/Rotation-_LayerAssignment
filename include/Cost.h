@@ -1,3 +1,3 @@
 #pragma once
 
-double calculateCongestionState(const int& demand, const int& capacity);
+double calculateOverflowLoss(const int& DemandMinusCapacity, const float& OverflowSlope);
