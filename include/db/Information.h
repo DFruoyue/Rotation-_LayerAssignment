@@ -25,15 +25,15 @@ namespace XZA{
                     overflowslope = 0.5;
                 else
                     overflowslope = 1.5;
-                overflow = calculateOverflowLoss(0, capacity);
+                overflow = calculateOverflowLoss(demand - capacity, capacity);
             }
             void increaseDemand(const int& positive_delta){
                 this -> demand += positive_delta;
-                overflow = calculateOverflowLoss(this -> demand, capacity);
+                overflow = calculateOverflowLoss(this -> demand - capacity, capacity);
             }
             void decreaseDemand(const int& positive_delta){
                 this -> demand -= positive_delta;
-                overflow = calculateOverflowLoss(this -> demand, capacity);
+                overflow = calculateOverflowLoss(this -> demand - capacity, capacity);
             }
             const int& getDemand() const {return demand;}
             const int& getCapacity() const {return capacity;}

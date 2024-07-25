@@ -8,6 +8,7 @@
 using namespace std;
 using namespace XZA;
 int main(){
+    Timer timer("开始计时");
     Database db("Data/nvdla.cap");
     Solution sl("Data/guide2D.txt", "Data/nvdla.net");
 
@@ -17,18 +18,23 @@ int main(){
 
     ld.run();
 
+/*
     if(ld.CheckViolation())
         return 0;
     else
         cout << "布线无误\n";
+*/
 
-    db.StaticDemand();
 
+/*
     Timer timer1("输出debug结果");
     sl.outputdebug("outputDebug.txt");
     timer1.output("输出debug结果");
+*/
     Timer timer2("输出设计结果");
     ld.outputdesign("output.txt");
     timer2.output("输出设计结果");
+
+    timer.output("程序总时间");
     return 0;
 }

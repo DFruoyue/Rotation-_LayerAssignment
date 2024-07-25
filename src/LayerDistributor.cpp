@@ -90,6 +90,10 @@ double LayerDistributor::CostofchangedWire(const Wire& prevWire, const Wire& nex
                 conjectionCost += db.changeCostofGcell(layer, x, y, WIRE_DEMAND) - db.changeCostofGcell(prevLayer, x, y, - WIRE_DEMAND);
             break;
         }
+        default:{
+            cerr << "错误访问:Wire的方向不明" << endl;
+            exit(0);
+        }
     }
     return conjectionCost;
 }
@@ -111,10 +115,13 @@ double LayerDistributor::CostofChangeWireToLayer(const int& layer, const int& wi
         prevVia2 = std::make_unique<Via>( sl[guideIdx].getVia(prevWire.getEndViaIdx()) );
 
     sl.setLayerofWire(guideIdx, wireIdx, layer);                //设置Wire的layer
+
     const Wire& nextWire = sl[guideIdx].getWire(wireIdx);
-    if(prevWire.isStartLinkVia()){nextVia1 = &sl[guideIdx].getVia(prevWire.getStartViaIdx());}
-    if(prevWire.isEndLinkVia()){nextVia2 = &sl[guideIdx].getVia(prevWire.getEndViaIdx());}
-    sl.setLayerofWire(guideIdx, wireIdx, prevLayer);  //恢复Wire的layer
+    if(prevWire.isStartLinkVia())
+        nextVia1 = &sl[guideIdx].getVia(prevWire.getStartViaIdx());
+    if(prevWire.isEndLinkVia())
+        nextVia2 = &sl[guideIdx].getVia(prevWire.getEndViaIdx());
+    
 
     double cost = 0;
     //计算Via的cost
@@ -125,6 +132,7 @@ double LayerDistributor::CostofChangeWireToLayer(const int& layer, const int& wi
     if(prevWire.isEndLinkVia())
         cost += CostofchangedVia(*prevVia2, *nextVia2);
 
+    sl.setLayerofWire(guideIdx, wireIdx, prevLayer);  //恢复Wire的layer
     return cost;
 }
 
