@@ -148,3 +148,4 @@ build/
 src/test.cpp
 demo/
 output.txt
+outputDebug.txt
