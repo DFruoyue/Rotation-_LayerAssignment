@@ -9,8 +9,7 @@
             "args":["--stack-size=1000000"],
             "cwd":"${workspaceFolder}",
             "terminal": "integrated"
-        },
-        {
+        },{
             "type":"lldb",
             "request":"launch",
             "name":"RunEvaluator",

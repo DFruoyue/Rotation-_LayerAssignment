@@ -28,12 +28,13 @@ namespace XZA{
         void load_data(const string& capfile);
 //        void outputdebug() const;
 
-        friend class LayerDistributor;
         Direction getDirectionofLayer(const int& l) const {return layers[l].getDirection();}
         double changeCostofGcell(const int& l, const int& x, const int& y, int delta);
         void StaticDemand() const;
         void increaseDemand(const int& l, const int& x, const int& y, const int& positive_delta);
         void decreaseDemand(const int& l, const int& x, const int& y, const int& positive_delta);
+        const int& getUnitViaCost()  const {return unitViacost;}
+        const int& getLayerNum() const {return layerNum;}
     };
 
 }

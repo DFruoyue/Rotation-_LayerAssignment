@@ -1,4 +1,4 @@
-#include "LayerDistributor.h"
+#include "LayerAssignmentWorker.h"
 #include <queue>
 #include "timer.hpp"
 #include <random>
@@ -6,51 +6,23 @@
 #include "ProcessBar.h"
 #include "timer.hpp"
 using namespace XZA;
-
-int randomNum(int high, int low = 0){
-    std::random_device rd; // 用于获取随机种子
-    std::mt19937 gen(rd()); // 标准 mersenne_twister_engine
-    std::uniform_int_distribution<> distrib(low, high); // 定义范围
-    return distrib(gen);
-}
-
-void LayerDistributor::outputdesign(const string& outfilename) const{
-    ofstream file(outfilename);
-    for(const Guide& guide: sl.guides){
-        file << guide.netname << endl;
-        file << "(\n";
-        for(const Wire& wire: guide.getWires()){
-            file << wire.getEdge() << endl;
-        }
-        for(const Via& via: guide.getVias()){
-            if(via.isValid())
-                file << via.getEdge() << endl;
-        }
-        file << ")\n";
-    }
-    file.close();
-}
-
-double LayerDistributor::CostofchangedVia(const Via& prevVia, const Via& nextVia) const{
-    if(!prevVia.isSettled() && !nextVia.isSettled())    //Via未被设置
+double LayerAssignmentWorker::CostofchangedVia(const Via& prevVia, const Via& nextVia) const{
+    if(!prevVia.isCounted() && !nextVia.isCounted())    //Via未被设置
         return 0;
 
     double conjectionCost = 0;
-    double count = 0;
     if(nextVia.isCounted() && !prevVia.isCounted()){    //新的Via被计数, 旧的Via未被计数
         const int &minLayer = nextVia.getminLayer();
         const int &maxLayer = nextVia.getmaxLayer();
         const Location2D& loc2D = nextVia.getLocation2D();
         for(int l = minLayer + 1; l <= maxLayer - 1; l++)
             conjectionCost += db.changeCostofGcell(l, loc2D.x, loc2D.y, STACKED_VIA_DEMAND);
-        count ++;
     }else if(!nextVia.isCounted() && prevVia.isCounted()){  //新的Via未被计数, 旧的Via被计数
         const int &minLayer = prevVia.getminLayer();
         const int &maxLayer = prevVia.getmaxLayer();
         const Location2D& loc2D = prevVia.getLocation2D();
         for(int l = minLayer + 1; l <= maxLayer - 1; l++)
             conjectionCost -= db.changeCostofGcell(l, loc2D.x, loc2D.y, -STACKED_VIA_DEMAND);
-        count --;
     }else if(nextVia.isCounted() && prevVia.isCounted()){
         const int& minLayer = std::min(prevVia.getminLayer(), nextVia.getminLayer());
         const int& maxLayer = std::max(prevVia.getmaxLayer(), nextVia.getmaxLayer());
@@ -62,10 +34,10 @@ double LayerDistributor::CostofchangedVia(const Via& prevVia, const Via& nextVia
                 conjectionCost -= db.changeCostofGcell(l, loc2D.x, loc2D.y, -STACKED_VIA_DEMAND);
         }
     }
-    return conjectionCost + count * db.unitViacost;
+    return conjectionCost;
 }
 
-double LayerDistributor::CostofchangedWire(const Wire& prevWire, const Wire& nextWire) const{
+double LayerAssignmentWorker::CostofchangedWire(const Wire& prevWire, const Wire& nextWire) const{
     double conjectionCost = 0;
     const int& prevLayer = prevWire.getLayer();
     const int& layer = nextWire.getLayer();
@@ -80,7 +52,7 @@ double LayerDistributor::CostofchangedWire(const Wire& prevWire, const Wire& nex
                 conjectionCost += db.changeCostofGcell(layer, x, y, WIRE_DEMAND) - db.changeCostofGcell(prevLayer, x, y, - WIRE_DEMAND);
             break;
         }
-        case VERTICAL:{
+        case VERTICAL:{//y变化
             const int& x = prevWire.getStart().x;
             const int& ystart = prevWire.getStart().y;
             const int& yend = prevWire.getEnd().y;
@@ -98,13 +70,16 @@ double LayerDistributor::CostofchangedWire(const Wire& prevWire, const Wire& nex
     return conjectionCost;
 }
 
-double LayerDistributor::CostofChangeWireToLayer(const int& layer, const int& wireIdx, const int& guideIdx){
+double LayerAssignmentWorker::CostofChangeWireToLayer(const int& layer, const int& wireIdx, const int& guideIdx){
     const Wire prevWire = sl[guideIdx].getWire(wireIdx);
     const int& prevLayer = prevWire.getLayer();
+    const int prevViaCount = sl[guideIdx].getViaCount();
+
     if(layer == prevLayer)
         return 0;
     
-    std::unique_ptr<Via> prevVia1 = nullptr;
+    //一个wire的两个Via
+    std::unique_ptr<Via> prevVia1 = nullptr;    
     std::unique_ptr<Via> prevVia2 = nullptr;
     const Via* nextVia1 = nullptr;
     const Via* nextVia2 = nullptr;
@@ -114,30 +89,33 @@ double LayerDistributor::CostofChangeWireToLayer(const int& layer, const int& wi
     if(prevWire.isEndLinkVia())
         prevVia2 = std::make_unique<Via>( sl[guideIdx].getVia(prevWire.getEndViaIdx()) );
 
-    sl.setLayerofWire(guideIdx, wireIdx, layer);                //设置Wire的layer
+    //设置Wire的layer,这一步不会更新db里面每一个Gcell的demand,但是会更新via的连接情况
+    sl.setLayerofWire(guideIdx, wireIdx, layer);
 
     const Wire& nextWire = sl[guideIdx].getWire(wireIdx);
     if(prevWire.isStartLinkVia())
         nextVia1 = &sl[guideIdx].getVia(prevWire.getStartViaIdx());
     if(prevWire.isEndLinkVia())
         nextVia2 = &sl[guideIdx].getVia(prevWire.getEndViaIdx());
-    
+    const int& nextViaCount = sl[guideIdx].getViaCount();
 
     double cost = 0;
     //计算Via的cost
 
-    cost += CostofchangedWire(prevWire, nextWire);
+    //有一点点bug，这里不能做分解
+    cost += CostofchangedWire(prevWire, nextWire);  //计算改动Wire本身的cost
     if(prevWire.isStartLinkVia())
-        cost += CostofchangedVia(*prevVia1, *nextVia1);
+        cost += CostofchangedVia(*prevVia1, *nextVia1); //计算改动wire导致Via范围变化的cost
     if(prevWire.isEndLinkVia())
-        cost += CostofchangedVia(*prevVia2, *nextVia2);
+        cost += CostofchangedVia(*prevVia2, *nextVia2); //计算改动wire导致Via范围变化的cost
 
+    cost += db.getUnitViaCost() * (nextViaCount - prevViaCount); //计算Via总数变化带来的的cost
     sl.setLayerofWire(guideIdx, wireIdx, prevLayer);  //恢复Wire的layer
     return cost;
 }
 
-void LayerDistributor::setWireToLayer(const int& guideIdx, const int& WireIdx, const int& layer){
-    Guide& guide = sl.guides[guideIdx];
+void LayerAssignmentWorker::setWireToLayer(const int& guideIdx, const int& WireIdx, const int& layer){
+    const Guide& guide = sl.getGuide(guideIdx);
     //复制变化前的Wire
     const Wire prevWire = guide.getWire(WireIdx);
     const int& prevLayer = prevWire.getLayer();
@@ -168,7 +146,8 @@ void LayerDistributor::setWireToLayer(const int& guideIdx, const int& WireIdx, c
 }
 
 /*
-void LayerDistributor::initConjection(){    //可能并不需要
+//初始化demand
+void LayerAssignmentWorker::initConjection(){    //因为一开始全部放置在BLANKLAYER,不需要初始化了
     for(const Guide& guide: sl.guides){
         for(const Wire& wire: guide.getWires()){
             const int& layer = wire.getLayer();
@@ -213,33 +192,15 @@ void LayerDistributor::initConjection(){    //可能并不需要
 }
 */
 
-void LayerDistributor::Assign(){
+void LayerAssignmentWorker::Assign(){
     const int NetNum = sl.getNetNum();
     for(int guideIdx = 0; guideIdx < NetNum; guideIdx++){
         updateProgressBar(1.0 * (guideIdx + 1)/NetNum);
-        AssignNetGreedy(guideIdx);
+        AssignNetGreedy(guideIdx);  //对每个Net进行贪心分配
     }
 }
 
-bool LayerDistributor::CheckViolation()const{
-    Timer timer("检查布线结果");
-    for(const Guide& guide: sl.guides){
-        for(const Wire& wire: guide.getWires()){
-            const int& layer = wire.getLayer();
-            if(wire.getDirection() != db.getDirectionofLayer(layer)){
-                cerr << "错误:Wire的方向与所在层的方向不一致" << endl;
-                return true;
-            }else if(layer < 1 || layer >= db.layerNum){
-                cerr << "错误:Wire的层号不在范围内" << endl;
-                return true;
-            }
-        }
-    }
-    timer.output("检查布线结果");
-    return false;
-}
-
-void LayerDistributor::updateDemand(const Wire& prevWire, const Wire& nextWire, const std::shared_ptr<Via> prevVia1, const Via* nextVia1, const std::shared_ptr<Via> prevVia2, const Via* nextVia2){
+void LayerAssignmentWorker::updateDemand(const Wire& prevWire, const Wire& nextWire, const std::shared_ptr<Via> prevVia1, const Via* nextVia1, const std::shared_ptr<Via> prevVia2, const Via* nextVia2){
     updateDemandofWire(prevWire, nextWire);
     if(prevVia1 != nullptr)
         updateDemandofVia(*prevVia1, *nextVia1);
@@ -247,7 +208,7 @@ void LayerDistributor::updateDemand(const Wire& prevWire, const Wire& nextWire, 
         updateDemandofVia(*prevVia2, *nextVia2);
 }
 
-void LayerDistributor::updateDemandofWire(const Wire& prevWire, const Wire& nextWire){
+void LayerAssignmentWorker::updateDemandofWire(const Wire& prevWire, const Wire& nextWire){
     const int& prevLayer = prevWire.getLayer();
     const int& layer = nextWire.getLayer();
     if(prevLayer == layer)
@@ -283,7 +244,7 @@ void LayerDistributor::updateDemandofWire(const Wire& prevWire, const Wire& next
     }
 }
 
-void LayerDistributor::updateDemandofVia(const Via& prevVia, const Via& nextVia){
+void LayerAssignmentWorker::updateDemandofVia(const Via& prevVia, const Via& nextVia){
     if(!prevVia.isSettled() && !nextVia.isSettled())    //Via未被设置
         return;
 
@@ -320,8 +281,8 @@ void LayerDistributor::updateDemandofVia(const Via& prevVia, const Via& nextVia)
     }
 }
 
-void LayerDistributor::AssignNetGreedy(const int& netIdx){
-    Guide& guide = sl.guides[netIdx];
+void LayerAssignmentWorker::AssignNetGreedy(const int& netIdx){
+    const Guide& guide = sl.getGuide(netIdx);
     const int wireNum = guide.getWireNum();
 
     for(int wireIdx = 0; wireIdx < wireNum; wireIdx++){
@@ -330,13 +291,15 @@ void LayerDistributor::AssignNetGreedy(const int& netIdx){
 
         double minCost = INFINITY;
         int targetLayer = BLANKLAYER;
-
-        for(int layer = 1; layer < db.layerNum; layer++){
+        
+        //对每一个wire,找到最小的cost
+        for(int layer = 1; layer < db.getLayerNum(); layer++){
             if(layer == prevLayer)
                 continue;
             if(db.getDirectionofLayer(layer) != wire.getDirection())
                 continue;
-
+            
+            //计算改变layer所需要的cost
             double cost = CostofChangeWireToLayer(layer, wireIdx, netIdx);
 
             if(cost < minCost){
@@ -344,7 +307,48 @@ void LayerDistributor::AssignNetGreedy(const int& netIdx){
                 targetLayer = layer;
             }
         }
-            setWireToLayer(netIdx, wireIdx, targetLayer);
+        //设置Wire的layer
+        setWireToLayer(netIdx, wireIdx, targetLayer);
     }
 
+}
+
+bool LayerAssignmentWorker::CheckViolation()const{
+    Timer timer("检查布线结果");
+    const int netNum = sl.getNetNum();
+    for(int guideIdx = 0; guideIdx < netNum; guideIdx++){
+        const Guide& guide = sl.getGuide(guideIdx);
+        const int wireNum = guide.getWireNum();
+        for(const Wire& wire: guide.getWires()){
+            const int& layer = wire.getLayer();
+            if(wire.getDirection() != db.getDirectionofLayer(layer)){
+                cerr << "错误:Wire的方向与所在层的方向不一致" << endl;
+                return true;
+            }else if(layer < 1 || layer >= db.getLayerNum()){
+                cerr << "错误:Wire的层号不在范围内" << endl;
+                return true;
+            }
+        }
+    }
+    timer.output("检查布线结果");
+    return false;
+}
+
+void LayerAssignmentWorker::outputdesign(const string& outfilename) const{
+    ofstream file(outfilename);
+    const int netNum = sl.getNetNum();
+    for(int i=0; i<netNum; i++){
+        const Guide& guide = sl.getGuide(i);
+        file << guide.netname << endl;
+        file << "(\n";
+        for(const Wire& wire: guide.getWires()){
+            file << wire.getEdge() << endl;
+        }
+        for(const Via& via: guide.getVias()){
+            if(via.isValid())
+                file << via.getEdge() << endl;
+        }
+        file << ")\n";
+    }
+    file.close();
 }

@@ -2,14 +2,25 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "build layerAssignment",
+        "label": "Clean build directory",
+        "type": "shell",
+        "command": "rm",
+        "args": [
+          "-rf",
+          "${workspaceFolder}/build"
+        ],
+      },
+      {
+        "label": "Build layerAssignment and evaluator",
         "type": "shell",
         "command": "cmake",
         "args": [
-          "--build",
-          "${workspaceFolder}/build",
-          "--config",
-          "Debug"
+          "-S", "${workspaceFolder}",
+          "-B", "${workspaceFolder}/build",
+          "&&",
+          "cmake",
+          "--build","${workspaceFolder}/build",
+          "--config", "Release"
         ],
         "problemMatcher": [
           "$msCompile"
@@ -17,7 +28,31 @@
         "group": {
           "kind": "build",
           "isDefault": true
-        }
+        },
+        "dependsOn" : "Clean build directory"
+      },
+      {
+        "label": "Run layerAssignment",
+        "type": "shell",
+        "command": "${workspaceFolder}/build/LayerAssignment",
+        "group": {
+          "kind": "test",
+          "isDefault": false
+        },
+      },
+      {
+        "label": "Run evaluator",
+        "type": "shell",
+        "command": "${workspaceFolder}/build/Evaluator",
+        "args": [
+          "${workspaceFolder}/Data/nvdla.cap",
+          "${workspaceFolder}/Data/nvdla.net",
+          "${workspaceFolder}/output.txt"
+        ],
+        "group": {
+          "kind": "test",
+          "isDefault": false
+        },
       }
     ]
   }

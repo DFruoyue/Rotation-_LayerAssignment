@@ -267,7 +267,7 @@ void Guide::output(ostream& os) const{
         os << my_blank << wire.getEdge() << ' ' << wire.direction << endl;
     }
 
-    os << ValidViaCount << " Valid Vias:\n";
+    os << ViaCount << " Valid Vias:\n";
     for(auto& via: vias){
         if(via.isValid())
             os << my_blank << via.getEdge() << endl;
@@ -376,6 +376,7 @@ void Guide::setLayerofWire(const int& WireIdx, const int& l){
     Wire& wire = wires[WireIdx];
     wire.setLayer(l);
 
+    //更新Via
     if(wire.startLinkVia)
         updateVia(wire.startViaIdx);
     if(wire.endLinkVia)
@@ -387,26 +388,32 @@ void Solution::setLayerofWire(const int& guideIdx, const int& WireIdx, const int
 }
 
 void Guide::updateVia(const int& ViaIdx){
-    bool prevViaValid = vias[ViaIdx].isValid();
+    bool preViaCounted = vias[ViaIdx].isCounted();
     Via &via = vias[ViaIdx];
     via.minLayer = INFINITY;
     via.maxLayer = 0;
     bool allset = true;
+    //遍历绑定此Via的所有node, 更新Via跨越的layer
     for(const Clue& nodeClue: via.NodeClues){
         int NodeLayer = getNodeLayer(nodeClue);
         via.minLayer = std::min(via.minLayer, NodeLayer);
         via.maxLayer = std::max(via.maxLayer, NodeLayer);
+        //如果有一个node的layer是BLANKLAYER, 那么这个Via就是尚未设置的
         if(NodeLayer == BLANKLAYER)
             allset = false;
     }
 
     via.settled = std::move(allset);
 
+    //更新ValidViaCount, 如果Via的最大层和最小层相同, 那么这个Via是无效的
     via.valid = via.minLayer < via.maxLayer;
-    if(!prevViaValid && via.isValid()){
-        ValidViaCount ++;
-    }
-    else if(prevViaValid && !via.isValid()){
-        ValidViaCount --;
-    }
+
+    if(!preViaCounted && via.isCounted())
+        ViaCount ++;
+    else if(preViaCounted && !via.isCounted())
+        ViaCount --;
+}
+
+const Guide& Solution::getGuide(const int& guideIdx) const{
+    return guides[guideIdx];
 }

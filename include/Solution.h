@@ -141,7 +141,7 @@ namespace XZA{
             std::vector<Via> vias;
             std::vector<Pin> pins;
             std::vector<Pin> Virtualpins;
-            int ValidViaCount = 0;
+            int ViaCount = 0;
             void updateVia(const int& ViaIdx);
             bool targetPin(const Location& loc);                        //标记pin的loc是否有效
             void addNodetoVia(const int& ViaIdx, const Clue& NodeClue); //将node添加到Via中
@@ -167,10 +167,10 @@ namespace XZA{
             const int& getLayerofWire(const int& i) const{return wires[i].layer;}
             const int getWireNum() const{return wires.size();}
             const int getViaNum() const{return vias.size();}
+            const int getViaCount() const{return ViaCount;}
     };
     
     class Solution{
-        friend class LayerDistributor;
         private:
             std::vector<Guide> guides;
 
@@ -188,9 +188,12 @@ namespace XZA{
             
             Solution(const std::string& guide2Dfilename, const std::string& netfilename){loadfile(guide2Dfilename);mergefile(netfilename);}
             const int getNetNum() const{return guides.size();}
+            const Guide& getGuide(const int& guideIdx) const;
+            
             void loadfile(const std::string& filename);
             void mergefile(const std::string& filename);
             void outputdebug(const std::string& filename) const;
             void setLayerofWire(const int& guideIdx, const int& WireIdx, const int& layer);
+            
     };
 }
