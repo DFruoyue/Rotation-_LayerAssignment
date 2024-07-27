@@ -15,9 +15,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/db
 )
-include_directories(
-    Users/mac/C++/library
-)
+
 # 添加可执行文件
 add_executable(LayerAssignment ${ObjectSources})
 add_executable(Evaluator "${CMAKE_CURRENT_SOURCE_DIR}/evaluator/evaluator.cpp")
